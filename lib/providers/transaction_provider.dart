@@ -345,40 +345,15 @@ class TransactionProvider with ChangeNotifier {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final transactions = await getTransactionsByDateRange(startDate, endDate);
-    final isYearly = startDate.month == 1 && endDate.month == 12;
-
-    // Sort transactions by date
-    transactions.sort((a, b) => a.date.compareTo(b.date));
-
-    // Create CSV content
-    final buffer = StringBuffer();
-    buffer.writeln('Date,Type,Category,Amount,Description');
-
-    for (final transaction in transactions) {
-      final category = _categories.firstWhere(
-        (c) => c.id == transaction.categoryId,
-        orElse: () => app_models.Category(name: 'Unknown', type: ''),
-      );
-
-      final date = DateFormat('yyyy-MM-dd').format(transaction.date);
-      final description = transaction.description?.replaceAll(',', ' ') ?? '';
-
-      buffer.writeln(
-        '$date,${transaction.type},${category.name},${transaction.amount},$description',
-      );
-    }
-
-    // Save to file
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName =
-        isYearly
-            ? 'transactions_${startDate.year}.csv'
-            : 'transactions_${DateFormat('yyyy_MM').format(startDate)}.csv';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsString(buffer.toString());
-
-    return file.path;
+    print('TransactionProvider: Calling DatabaseHelper.exportToCSV');
+    final filePath = await DatabaseHelper.instance.exportToCSV(
+      startDate,
+      endDate,
+    );
+    print(
+      'TransactionProvider: DatabaseHelper.exportToCSV returned path: $filePath',
+    );
+    return filePath;
   }
 
   Future<void> updateProfile(Profile profile) async {

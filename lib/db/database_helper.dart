@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/transaction.dart' as app_models;
 import '../models/category.dart' as app_models;
-import '../models/profile.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -33,7 +32,6 @@ class DatabaseHelper {
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Create profiles table
       await db.execute('''
         CREATE TABLE profiles (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,24 +41,18 @@ class DatabaseHelper {
         )
       ''');
 
-      // Insert default profile
       await db.insert('profiles', {
         'name': 'Profile 1',
         'is_selected': 1,
         'icon_name': 'person',
       });
 
-      // Add profile_id column to transactions
       await db.execute(
         'ALTER TABLE transactions ADD COLUMN profile_id INTEGER',
       );
-
-      // Add profile_id column to monthly_budgets
       await db.execute(
         'ALTER TABLE monthly_budgets ADD COLUMN profile_id INTEGER',
       );
-
-      // Set all existing transactions and budgets to default profile (id=1)
       await db.execute('UPDATE transactions SET profile_id = 1');
       await db.execute('UPDATE monthly_budgets SET profile_id = 1');
     }
@@ -72,7 +64,6 @@ class DatabaseHelper {
     const integerType = 'INTEGER NOT NULL';
     const realType = 'REAL NOT NULL';
 
-    // Create profiles table
     await db.execute('''
       CREATE TABLE profiles (
         id $idType,
@@ -82,10 +73,8 @@ class DatabaseHelper {
       )
     ''');
 
-    // Insert default profile
     await db.insert('profiles', {'name': 'Profile 1', 'is_selected': 1});
 
-    // Create categories table
     await db.execute('''
       CREATE TABLE categories (
         id $idType,
@@ -94,7 +83,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create transactions table with profile_id
     await db.execute('''
       CREATE TABLE transactions (
         id $idType,
@@ -109,7 +97,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create monthly_budgets table with profile_id
     await db.execute('''
       CREATE TABLE monthly_budgets (
         id $idType,
@@ -120,7 +107,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Add default categories
     final batch = db.batch();
     batch.insert('categories', {'name': 'Groceries', 'type': 'expense'});
     batch.insert('categories', {'name': 'Transport', 'type': 'expense'});
@@ -134,13 +120,11 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'money_tracker.db');
 
-    // Close the database
     if (_database != null) {
       await _database!.close();
       _database = null;
     }
 
-    // Delete the database file
     if (await databaseExists(path)) {
       await deleteDatabase(path);
     }
@@ -150,22 +134,18 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'money_tracker.db');
 
-    // Close the database
     if (_database != null) {
       await _database!.close();
       _database = null;
     }
 
-    // Delete the database file
     if (await databaseExists(path)) {
       await databaseFactory.deleteDatabase(path);
     }
 
-    // Recreate database by accessing it
     await database;
   }
 
-  // Transaction operations
   Future<List<app_models.Transaction>> getTransactionsByDateRange(
     DateTime startDate,
     DateTime endDate,
@@ -193,7 +173,6 @@ class DatabaseHelper {
     return maps.map((map) => app_models.Transaction.fromMap(map)).toList();
   }
 
-  // Category operations
   Future<List<app_models.Category>> getAllCategories() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('categories');
@@ -214,45 +193,40 @@ class DatabaseHelper {
 
   Future<String> exportToCSV(DateTime startDate, DateTime endDate) async {
     try {
-      late final Directory baseDir;
-      late final String filePath;
+      print('Starting exportToCSV for dates: $startDate to $endDate');
+      late String filePath;
+      final fileName =
+          'transactions_${DateFormat('yyyy_MM_dd').format(startDate)}_to_${DateFormat('yyyy_MM_dd').format(endDate)}.csv';
 
       if (Platform.isAndroid) {
-        // Use the public Documents directory on Android
-        final dirs = await getExternalStorageDirectories(
-          type: StorageDirectory.documents,
-        );
-        if (dirs == null || dirs.isEmpty) {
-          throw Exception('Could not access external storage');
+        // Use the Download directory for better accessibility
+        final directory = Directory('/storage/emulated/0/Download');
+
+        print('Attempting to access directory: ${directory.path}');
+        if (!await directory.exists()) {
+          print('Directory does not exist, creating: ${directory.path}');
+          await directory.create(recursive: true);
         }
-        baseDir = Directory('${dirs.first.path}/MaoneyTracker');
-        if (!await baseDir.exists()) {
-          await baseDir.create(recursive: true);
+
+        filePath = '${directory.path}/$fileName';
+      } else if (Platform.isIOS || Platform.isMacOS) {
+        final directory = await getApplicationDocumentsDirectory();
+        final moneyTrackerDir = Directory('${directory.path}/MoneyTracker');
+        if (!await moneyTrackerDir.exists()) {
+          await moneyTrackerDir.create(recursive: true);
         }
-        final fileName =
-            'transactions_${DateFormat('yyyy_MM_dd').format(startDate)}_to_${DateFormat('yyyy_MM_dd').format(endDate)}.csv';
-        filePath = '${baseDir.path}/$fileName';
-      } else if (Platform.isMacOS) {
-        // For macOS, use ~/Documents/MaoneyTracker
-        final home = Platform.environment['HOME'] ?? '';
-        baseDir = Directory('$home/Documents/MaoneyTracker');
-        if (!await baseDir.exists()) {
-          await baseDir.create(recursive: true);
-        }
-        final fileName =
-            'transactions_${DateFormat('yyyy_MM_dd').format(startDate)}_to_${DateFormat('yyyy_MM_dd').format(endDate)}.csv';
-        filePath = '${baseDir.path}/$fileName';
+        filePath = '${moneyTrackerDir.path}/$fileName';
+        print('iOS/macOS: Saving file to: $filePath');
       } else {
-        // For iOS/other, just use the default app documents directory
-        final appDocDir = await getApplicationDocumentsDirectory();
-        final fileName =
-            'transactions_${DateFormat('yyyy_MM_dd').format(startDate)}_to_${DateFormat('yyyy_MM_dd').format(endDate)}.csv';
-        filePath = '${appDocDir.path}/$fileName';
+        final directory = await getApplicationDocumentsDirectory();
+        filePath = '${directory.path}/$fileName';
+        print('Other platform: Saving file to: $filePath');
       }
 
       final file = File(filePath);
 
       final db = await database;
+      print('Querying transactions from database...');
       final transactions = await db.rawQuery(
         '''
         SELECT t.*, c.name as category_name 
@@ -260,12 +234,11 @@ class DatabaseHelper {
         LEFT JOIN categories c ON t.category_id = c.id 
         WHERE t.date BETWEEN ? AND ?
         ORDER BY t.date DESC
-      ''',
+        ''',
         [startDate.toIso8601String(), endDate.toIso8601String()],
       );
 
       final csvData = StringBuffer();
-      // Columns: Date, Type, Category, Description, Amount
       csvData.writeln('Date,Type,Category,Description,Amount');
 
       for (var t in transactions) {
@@ -276,14 +249,15 @@ class DatabaseHelper {
         final category = t['category_name'] as String;
         final description = t['description'] ?? '';
         final amount = (t['amount'] as num).toStringAsFixed(2);
-
-        // Output data in the same order as headers
         csvData.writeln('$date,"$type","$category","$description",₹$amount');
       }
 
+      print('Writing CSV file to: $filePath');
       await file.writeAsString(csvData.toString());
+      print('File successfully written to: $filePath');
       return filePath;
     } catch (e) {
+      print('Export error in exportToCSV: $e');
       throw Exception('Failed to export file: $e');
     }
   }

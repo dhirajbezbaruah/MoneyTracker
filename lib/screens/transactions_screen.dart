@@ -63,13 +63,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return true;
     }
 
-    final status = await Permission.manageExternalStorage.status;
+    // For Android 13 and above (SDK 33+)
+    if (await Permission.mediaLibrary.request().isGranted) {
+      return true;
+    }
 
+    // For Android 10 and above (SDK 29+)
+    final status = await Permission.storage.status;
     if (status.isGranted) {
       return true;
     }
 
-    // Show an explanation dialog before requesting permission
+    // Show explanation dialog
     if (!mounted) return false;
     final shouldRequest = await showDialog<bool>(
       context: context,
@@ -77,8 +82,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           (context) => AlertDialog(
             title: const Text('Permission Needed'),
             content: const Text(
-              'Money Tracker needs permission to save exported files in your Documents folder. '
-              'Please grant "Files and media" permission in the next screen.',
+              'Money Tracker needs permission to save exported files. '
+              'Please grant storage permission in the next screen.',
             ),
             actions: [
               TextButton(
@@ -97,7 +102,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return false;
     }
 
-    final result = await Permission.manageExternalStorage.request();
+    // Request permission
+    final result = await Permission.storage.request();
 
     if (result.isPermanentlyDenied) {
       if (!mounted) return false;
@@ -107,8 +113,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             (context) => AlertDialog(
               title: const Text('Permission Required'),
               content: const Text(
-                'Storage permission is required to save exported files in Documents/MoneyTracker. '
-                'Please enable "Files and media" permission in settings.',
+                'Storage permission is required to save exported files. '
+                'Please enable storage permission in settings.',
               ),
               actions: [
                 TextButton(
@@ -125,8 +131,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
       if (shouldOpenSettings == true) {
         await openAppSettings();
-        // Check if permission was granted
-        final newStatus = await Permission.manageExternalStorage.status;
+        final newStatus = await Permission.storage.status;
         return newStatus.isGranted;
       }
       return false;
@@ -162,6 +167,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
       try {
         final filePath = await provider.exportTransactions(startDate, endDate);
+        print('Export successful, filePath: $filePath');
+
         if (!mounted) return;
 
         final theme = Theme.of(context);
@@ -184,8 +191,48 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 content: Text('File saved to:\n$filePath'),
                 actions: [
                   TextButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(context, 'open');
+                      if (Platform.isAndroid) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('File saved to Downloads folder'),
+                            backgroundColor: Colors.green,
+                            duration: const Duration(seconds: 5),
+                            action: SnackBarAction(
+                              label: 'OK',
+                              textColor: Colors.white,
+                              onPressed: () {},
+                            ),
+                          ),
+                        );
+                      } else {
+                        try {
+                          final uri = Uri.file(filePath);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } else {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not open file'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Could not open file: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: colorScheme.primary,
@@ -207,33 +254,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         );
 
         if (choice == 'share') {
+          print('Sharing file: $filePath');
           final file = XFile(filePath);
           await Share.shareXFiles([file], text: 'Exported transactions');
-        } else if (choice == 'open') {
-          if (Platform.isIOS || Platform.isMacOS) {
-            await Process.run('open', [filePath]);
-          } else if (Platform.isAndroid) {
-            try {
-              // For Android, use the Share.shareXFiles with proper context
-              final file = XFile(filePath);
-              await Share.shareXFiles(
-                [file],
-                subject: 'Open with',
-                text: 'Open with available apps',
-                sharePositionOrigin: Rect.fromLTWH(0, 0, 10, 10),
-              );
-            } catch (e) {
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Could not open file: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
         }
       } catch (e) {
+        print('Export failed: $e');
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
