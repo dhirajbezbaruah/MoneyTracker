@@ -199,8 +199,10 @@ class DatabaseHelper {
           'transactions_${DateFormat('yyyy_MM_dd').format(startDate)}_to_${DateFormat('yyyy_MM_dd').format(endDate)}.csv';
 
       if (Platform.isAndroid) {
-        // Use the Download directory for better accessibility
-        final directory = Directory('/storage/emulated/0/Download');
+        // Use Documents directory for consistent behavior
+        final directory = Directory(
+          '/storage/emulated/0/Documents/MoneyTracker',
+        );
 
         print('Attempting to access directory: ${directory.path}');
         if (!await directory.exists()) {
@@ -219,7 +221,11 @@ class DatabaseHelper {
         print('iOS/macOS: Saving file to: $filePath');
       } else {
         final directory = await getApplicationDocumentsDirectory();
-        filePath = '${directory.path}/$fileName';
+        final moneyTrackerDir = Directory('${directory.path}/MoneyTracker');
+        if (!await moneyTrackerDir.exists()) {
+          await moneyTrackerDir.create(recursive: true);
+        }
+        filePath = '${moneyTrackerDir.path}/$fileName';
         print('Other platform: Saving file to: $filePath');
       }
 

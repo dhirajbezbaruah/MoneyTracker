@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:android_intent_plus/android_intent.dart';
 import '../models/transaction.dart' as app_models;
 import '../providers/transaction_provider.dart';
 import '../widgets/export_dialog.dart';
@@ -194,25 +195,37 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     onPressed: () async {
                       Navigator.pop(context, 'open');
                       if (Platform.isAndroid) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('File saved to Downloads folder'),
-                            backgroundColor: Colors.green,
-                            duration: const Duration(seconds: 5),
-                            action: SnackBarAction(
-                              label: 'OK',
-                              textColor: Colors.white,
-                              onPressed: () {},
+                        try {
+                          final uri =
+                              "content://com.example.money_tracker.fileprovider/external_storage_root/" +
+                              filePath.replaceAll("/storage/emulated/0/", "");
+
+                          final intent = AndroidIntent(
+                            action: 'android.intent.action.VIEW',
+                            type: 'text/csv',
+                            data: uri,
+                            flags: <int>[
+                              0x00000001, // FLAG_GRANT_READ_URI_PERMISSION
+                              0x10000000, // FLAG_ACTIVITY_NEW_TASK
+                            ],
+                          );
+                          await intent.launch();
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Could not open file: $e'),
+                              backgroundColor: Colors.red,
                             ),
-                          ),
-                        );
+                          );
+                        }
                       } else {
                         try {
                           final uri = Uri.file(filePath);
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(
                               uri,
-                              mode: LaunchMode.externalApplication,
+                              mode: LaunchMode.platformDefault,
                             );
                           } else {
                             if (!mounted) return;
@@ -237,7 +250,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     style: TextButton.styleFrom(
                       foregroundColor: colorScheme.primary,
                     ),
-                    child: const Text('Open File'),
+                    child: const Text('Open'),
                   ),
                   FilledButton(
                     onPressed: () {
