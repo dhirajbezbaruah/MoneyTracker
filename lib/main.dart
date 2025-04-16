@@ -31,13 +31,23 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
           theme: ThemeData(
             useMaterial3: true,
-            colorSchemeSeed: Colors.purpleAccent.shade200,
+            colorSchemeSeed: const Color(0xFF2E5C88),
             brightness: Brightness.light,
+            scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFFF5F7FA),
+              elevation: 0,
+            ),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
-            colorSchemeSeed: Colors.purpleAccent.shade200,
+            colorSchemeSeed: const Color(0xFF2E5C88),
             brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF0A1929),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF0A1929),
+              elevation: 0,
+            ),
             iconTheme: const IconThemeData(color: Colors.white70),
             listTileTheme: const ListTileThemeData(iconColor: Colors.white70),
           ),
@@ -81,30 +91,26 @@ class _MainScreenState extends State<MainScreen> {
         decoration: BoxDecoration(
           color:
               Theme.of(context).brightness == Brightness.dark
-                  ? Theme.of(context).colorScheme.surface.withOpacity(0.9)
+                  ? const Color(0xFF0A1929)
                   : Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: const Offset(0, -2),
+              offset: const Offset(0, -5),
             ),
           ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.home_rounded, 'Home'),
-                _buildNavItem(1, Icons.receipt_long_rounded, 'Transactions'),
-                _buildNavItem(2, Icons.category_rounded, 'Categories'),
-                _buildNavItem(3, Icons.settings_rounded, 'Settings'),
+                _buildNavItem(0, Icons.home_outlined, Icons.home),
+                _buildNavItem(1, Icons.receipt_outlined, Icons.receipt),
+                _buildNavItem(2, Icons.category_outlined, Icons.category),
+                _buildNavItem(3, Icons.settings_outlined, Icons.settings),
               ],
             ),
           ),
@@ -113,16 +119,16 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData iconData, String label) {
+  Widget _buildNavItem(int index, IconData icon, IconData selectedIcon) {
     final isSelected = _selectedIndex == index;
     final color =
         isSelected
             ? Theme.of(context).brightness == Brightness.dark
-                ? Colors.purpleAccent.shade100
-                : Colors.purpleAccent.shade200
+                ? const Color(0xFF2E5C88)
+                : const Color(0xFF1E3D59)
             : Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withOpacity(0.6)
-            : Colors.grey.shade600;
+            ? Colors.white70
+            : const Color(0xFF6B7F99);
 
     return InkWell(
       onTap: () {
@@ -140,12 +146,12 @@ class _MainScreenState extends State<MainScreen> {
                     colors:
                         Theme.of(context).brightness == Brightness.dark
                             ? [
-                              Colors.purpleAccent.withOpacity(0.2),
-                              Colors.purple.withOpacity(0.15),
+                              const Color(0xFF2E5C88).withOpacity(0.2),
+                              const Color(0xFF15294D).withOpacity(0.15),
                             ]
                             : [
-                              Colors.purpleAccent.shade100.withOpacity(0.2),
-                              Colors.purple.shade50,
+                              const Color(0xFF2E5C88).withOpacity(0.15),
+                              const Color(0xFF1E3D59).withOpacity(0.1),
                             ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -153,21 +159,7 @@ class _MainScreenState extends State<MainScreen> {
                   borderRadius: BorderRadius.circular(16),
                 )
                 : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(iconData, size: 24, color: color),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ],
-        ),
+        child: Icon(isSelected ? selectedIcon : icon, color: color),
       ),
     );
   }

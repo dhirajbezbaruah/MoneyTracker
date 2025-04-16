@@ -12,7 +12,7 @@ class SettingsScreen extends StatelessWidget {
   void _shareApp() {
     Share.share(
       'Track your expenses with Money Tracker!\n'
-      'Download now: [Your App Store Link]',
+      'Download now: https://play.google.com/store/apps/details?id=com.fincalculators.moneytrack',
     );
   }
 
@@ -20,7 +20,7 @@ class SettingsScreen extends StatelessWidget {
     // Replace with your actual app store links
     const appStoreUrl = 'https://apps.apple.com/app/[your-app-id]';
     const playStoreUrl =
-        'https://play.google.com/store/apps/details?id=[your-app-id]';
+        'https://play.google.com/store/apps/details?id=com.fincalculators.moneytrack';
 
     final Uri url = Uri.parse(
       Theme.of(context).platform == TargetPlatform.iOS
@@ -55,12 +55,12 @@ class SettingsScreen extends StatelessWidget {
                       colors:
                           Theme.of(context).brightness == Brightness.dark
                               ? [
-                                Colors.purpleAccent.shade700,
-                                Colors.purple.shade900,
+                                const Color(0xFF2E5C88),
+                                const Color(0xFF15294D),
                               ]
                               : [
-                                Colors.purpleAccent.shade200,
-                                Colors.purple.shade100,
+                                const Color(0xFF2E5C88),
+                                const Color(0xFF1E3D59),
                               ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -70,8 +70,8 @@ class SettingsScreen extends StatelessWidget {
                       BoxShadow(
                         color:
                             Theme.of(context).brightness == Brightness.dark
-                                ? Colors.purpleAccent.withOpacity(0.3)
-                                : Colors.purpleAccent.withOpacity(0.2),
+                                ? const Color(0xFF2E5C88).withOpacity(0.3)
+                                : const Color(0xFF2E5C88).withOpacity(0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -163,8 +163,8 @@ class SettingsScreen extends StatelessWidget {
                         size: 48,
                         color:
                             Theme.of(context).brightness == Brightness.dark
-                                ? Colors.purpleAccent.shade100
-                                : Colors.purpleAccent.shade200,
+                                ? const Color(0xFF2E5C88)
+                                : const Color(0xFF2E5C88),
                       ),
                       children: [
                         const Text(
@@ -182,7 +182,7 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: 'Privacy policy and terms',
                   iconData: Icons.privacy_tip_outlined,
                   onTap: () async {
-                    const privacyUrl = 'https://your-privacy-policy-url.com';
+                    const privacyUrl = 'https://fincalculators.com/privacy';
                     final Uri url = Uri.parse(privacyUrl);
                     if (!await launchUrl(url)) {
                       throw Exception('Could not launch \$url');
@@ -233,8 +233,8 @@ class SettingsScreen extends StatelessWidget {
         border: Border.all(
           color:
               Theme.of(context).brightness == Brightness.dark
-                  ? Colors.purpleAccent.withOpacity(0.1)
-                  : Colors.purpleAccent.withOpacity(0.08),
+                  ? const Color(0xFF2E5C88).withOpacity(0.1)
+                  : const Color(0xFF2E5C88).withOpacity(0.08),
           width: 1.5,
         ),
       ),
@@ -248,8 +248,8 @@ class SettingsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 Theme.of(context).brightness == Brightness.dark
-                    ? Colors.purpleAccent.withOpacity(0.15)
-                    : Colors.purpleAccent.shade100.withOpacity(0.15),
+                    ? const Color(0xFF2E5C88).withOpacity(0.15)
+                    : const Color(0xFF2E5C88).withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -257,8 +257,8 @@ class SettingsScreen extends StatelessWidget {
             size: 22,
             color:
                 Theme.of(context).brightness == Brightness.dark
-                    ? Colors.purpleAccent.shade100
-                    : Colors.purpleAccent.shade200,
+                    ? const Color(0xFF2E5C88)
+                    : const Color(0xFF2E5C88),
           ),
         ),
         title: Text(
@@ -288,16 +288,16 @@ class SettingsScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color:
                         Theme.of(context).brightness == Brightness.dark
-                            ? Colors.purpleAccent.withOpacity(0.1)
-                            : Colors.purpleAccent.withOpacity(0.05),
+                            ? const Color(0xFF2E5C88).withOpacity(0.1)
+                            : const Color(0xFF2E5C88).withOpacity(0.05),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.chevron_right,
                     color:
                         Theme.of(context).brightness == Brightness.dark
-                            ? Colors.purpleAccent.shade100
-                            : Colors.purpleAccent.shade200,
+                            ? const Color(0xFF2E5C88)
+                            : const Color(0xFF2E5C88),
                     size: 20,
                   ),
                 )

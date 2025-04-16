@@ -68,7 +68,10 @@ class _ExportDialogState extends State<ExportDialog> {
                   ),
                   trailing: Icon(
                     Icons.calendar_today,
-                    color: colorScheme.primary,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF2E5C88)
+                            : const Color(0xFF2E5C88),
                   ),
                   onTap: () async {
                     final date = await showDatePicker(
@@ -112,7 +115,10 @@ class _ExportDialogState extends State<ExportDialog> {
                   ),
                   trailing: Icon(
                     Icons.calendar_today,
-                    color: colorScheme.primary,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF2E5C88)
+                            : const Color(0xFF2E5C88),
                   ),
                   onTap: () async {
                     final date = await showDatePicker(
@@ -170,7 +176,10 @@ class _ExportDialogState extends State<ExportDialog> {
               });
             },
             style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.primary,
+              backgroundColor:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2E5C88)
+                      : const Color(0xFF2E5C88),
               foregroundColor: colorScheme.onPrimary,
             ),
             child: const Text('Export'),

@@ -21,13 +21,10 @@ class AppearanceScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     colors:
                         Theme.of(context).brightness == Brightness.dark
-                            ? [
-                              Colors.purpleAccent.shade700,
-                              Colors.purple.shade900,
-                            ]
+                            ? [const Color(0xFF2E5C88), const Color(0xFF15294D)]
                             : [
-                              Colors.purpleAccent.shade200,
-                              Colors.purple.shade100,
+                              const Color(0xFF2E5C88),
+                              const Color(0xFF1E3D59),
                             ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -37,8 +34,8 @@ class AppearanceScreen extends StatelessWidget {
                     BoxShadow(
                       color:
                           Theme.of(context).brightness == Brightness.dark
-                              ? Colors.purpleAccent.withOpacity(0.3)
-                              : Colors.purpleAccent.withOpacity(0.2),
+                              ? const Color(0xFF2E5C88).withOpacity(0.3)
+                              : const Color(0xFF2E5C88).withOpacity(0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -130,8 +127,8 @@ class AppearanceScreen extends StatelessWidget {
                   border: Border.all(
                     color:
                         Theme.of(context).brightness == Brightness.dark
-                            ? Colors.purpleAccent.withOpacity(0.1)
-                            : Colors.purpleAccent.withOpacity(0.08),
+                            ? const Color(0xFF2E5C88).withOpacity(0.1)
+                            : const Color(0xFF2E5C88).withOpacity(0.08),
                     width: 1.5,
                   ),
                 ),
@@ -145,10 +142,8 @@ class AppearanceScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.purpleAccent.withOpacity(0.15)
-                                    : Colors.purpleAccent.shade100.withOpacity(
-                                      0.15,
-                                    ),
+                                    ? const Color(0xFF2E5C88).withOpacity(0.15)
+                                    : const Color(0xFF2E5C88).withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -156,8 +151,8 @@ class AppearanceScreen extends StatelessWidget {
                             size: 20,
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.purpleAccent.shade100
-                                    : Colors.purpleAccent.shade200,
+                                    ? const Color(0xFF2E5C88)
+                                    : const Color(0xFF2E5C88),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -224,12 +219,12 @@ class AppearanceScreen extends StatelessWidget {
               isSelected
                   ? Theme.of(context).brightness == Brightness.dark
                       ? [
-                        Colors.purpleAccent.withOpacity(0.2),
-                        Colors.purple.withOpacity(0.15),
+                        const Color(0xFF2E5C88).withOpacity(0.2),
+                        const Color(0xFF15294D).withOpacity(0.15),
                       ]
                       : [
-                        Colors.purpleAccent.shade100.withOpacity(0.2),
-                        Colors.purple.shade50,
+                        const Color(0xFF2E5C88).withOpacity(0.15),
+                        const Color(0xFF1E3D59).withOpacity(0.1),
                       ]
                   : Theme.of(context).brightness == Brightness.dark
                   ? [
@@ -252,8 +247,8 @@ class AppearanceScreen extends StatelessWidget {
           color:
               isSelected
                   ? Theme.of(context).brightness == Brightness.dark
-                      ? Colors.purpleAccent.withOpacity(0.3)
-                      : Colors.purpleAccent.shade200.withOpacity(0.3)
+                      ? const Color(0xFF2E5C88).withOpacity(0.3)
+                      : const Color(0xFF2E5C88).withOpacity(0.3)
                   : Theme.of(context).brightness == Brightness.dark
                   ? Colors.grey.withOpacity(0.2)
                   : Colors.grey.shade200,
@@ -271,17 +266,15 @@ class AppearanceScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 Theme.of(context).brightness == Brightness.dark
-                    ? Colors.purpleAccent.withOpacity(0.15)
-                    : Colors.purpleAccent.shade100.withOpacity(0.15),
+                    ? const Color(0xFF2E5C88).withOpacity(0.15)
+                    : const Color(0xFF2E5C88).withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
             iconData,
             color:
                 isSelected
-                    ? Theme.of(context).brightness == Brightness.dark
-                        ? Colors.purpleAccent.shade100
-                        : Colors.purpleAccent.shade200
+                    ? const Color(0xFF2E5C88)
                     : Theme.of(context).brightness == Brightness.dark
                     ? Colors.white.withOpacity(0.7)
                     : Colors.grey.shade700,
@@ -316,16 +309,13 @@ class AppearanceScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color:
                         Theme.of(context).brightness == Brightness.dark
-                            ? Colors.purpleAccent.withOpacity(0.2)
-                            : Colors.purpleAccent.shade100.withOpacity(0.2),
+                            ? const Color(0xFF2E5C88).withOpacity(0.2)
+                            : const Color(0xFF2E5C88).withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.check_rounded,
-                    color:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? Colors.purpleAccent.shade100
-                            : Colors.purpleAccent.shade200,
+                    color: const Color(0xFF2E5C88),
                     size: 20,
                   ),
                 )

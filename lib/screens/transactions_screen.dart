@@ -7,10 +7,14 @@ import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import '../models/transaction.dart' as app_models;
 import '../providers/transaction_provider.dart';
 import '../widgets/export_dialog.dart';
 import '../widgets/add_transaction_dialog.dart';
+
+const expenseColorDark = Color(0xFFE57373);
+const expenseColorLight = Color(0xFFEF5350);
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -60,62 +64,28 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Future<bool> _requestStoragePermission() async {
-    if (!Platform.isAndroid) {
-      return true;
-    }
+    if (!Platform.isAndroid) return true;
 
-    // For Android 13 and above (SDK 33+)
-    if (await Permission.mediaLibrary.request().isGranted) {
-      return true;
-    }
-
-    // For Android 10 and above (SDK 29+)
-    final status = await Permission.storage.status;
-    if (status.isGranted) {
-      return true;
-    }
-
-    // Show explanation dialog
-    if (!mounted) return false;
-    final shouldRequest = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Permission Needed'),
-            content: const Text(
-              'Money Tracker needs permission to save exported files. '
-              'Please grant storage permission in the next screen.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Continue'),
-              ),
-            ],
-          ),
+    // Check Android version
+    final sdkInt = await DeviceInfoPlugin().androidInfo.then(
+      (info) => info.version.sdkInt,
     );
 
-    if (shouldRequest != true) {
-      return false;
-    }
+    if (sdkInt >= 33) {
+      // Android 13 and above
+      final status = await Permission.manageExternalStorage.status;
+      if (status.isGranted) return true;
 
-    // Request permission
-    final result = await Permission.storage.request();
-
-    if (result.isPermanentlyDenied) {
+      // Show explanation dialog for Android 13+
       if (!mounted) return false;
-      final shouldOpenSettings = await showDialog<bool>(
+      final shouldRequest = await showDialog<bool>(
         context: context,
         builder:
             (context) => AlertDialog(
-              title: const Text('Permission Required'),
+              title: const Text('Permission Needed'),
               content: const Text(
-                'Storage permission is required to save exported files. '
-                'Please enable storage permission in settings.',
+                'Money Tracker needs permission to save files in Documents folder. '
+                'Please grant "All files access" permission in the next screen.',
               ),
               actions: [
                 TextButton(
@@ -124,21 +94,122 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Open Settings'),
+                  child: const Text('Continue'),
                 ),
               ],
             ),
       );
 
-      if (shouldOpenSettings == true) {
-        await openAppSettings();
-        final newStatus = await Permission.storage.status;
-        return newStatus.isGranted;
-      }
-      return false;
-    }
+      if (shouldRequest != true) return false;
 
-    return result.isGranted;
+      // Request permission
+      final result = await Permission.manageExternalStorage.request();
+      if (result.isGranted) return true;
+
+      if (result.isPermanentlyDenied) {
+        if (!mounted) return false;
+        final shouldOpenSettings = await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Permission Required'),
+                content: const Text(
+                  'All files access permission is required to save exported files. '
+                  'Please enable it in settings.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Open Settings'),
+                  ),
+                ],
+              ),
+        );
+
+        if (shouldOpenSettings == true) {
+          await openAppSettings();
+          final newStatus = await Permission.manageExternalStorage.status;
+          return newStatus.isGranted;
+        }
+        return false;
+      }
+      return result.isGranted;
+    } else {
+      // For Android 12 and below
+      if (await Permission.storage.request().isGranted) {
+        return true;
+      }
+
+      final status = await Permission.storage.status;
+      if (status.isGranted) {
+        return true;
+      }
+
+      // Show explanation dialog
+      if (!mounted) return false;
+      final shouldRequest = await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Permission Needed'),
+              content: const Text(
+                'Money Tracker needs permission to save exported files. '
+                'Please grant storage permission in the next screen.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Continue'),
+                ),
+              ],
+            ),
+      );
+
+      if (shouldRequest != true) return false;
+
+      // Request permission
+      final result = await Permission.storage.request();
+      if (result.isPermanentlyDenied) {
+        if (!mounted) return false;
+        final shouldOpenSettings = await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Permission Required'),
+                content: const Text(
+                  'Storage permission is required to save exported files. '
+                  'Please enable storage permission in settings.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Open Settings'),
+                  ),
+                ],
+              ),
+        );
+
+        if (shouldOpenSettings == true) {
+          await openAppSettings();
+          final newStatus = await Permission.storage.status;
+          return newStatus.isGranted;
+        }
+        return false;
+      }
+      return result.isGranted;
+    }
   }
 
   Future<void> _showExportDialog() async {
@@ -197,7 +268,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       if (Platform.isAndroid) {
                         try {
                           final uri =
-                              "content://com.example.money_tracker.fileprovider/external_storage_root/" +
+                              "content://com.fincalculators.moneytrack.fileprovider/external_storage_root/" +
                               filePath.replaceAll("/storage/emulated/0/", "");
 
                           final intent = AndroidIntent(
@@ -306,7 +377,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   );
                   Navigator.pop(context);
                 },
-                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                style: FilledButton.styleFrom(
+                  backgroundColor:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? expenseColorDark
+                          : expenseColorLight,
+                ),
                 child: const Text('Delete'),
               ),
             ],
@@ -431,7 +507,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     },
                     child: Text(
                       DateFormat(
-                        'MMMM yyyy',
+                        'MMM yyyy',
                       ).format(DateFormat('yyyy-MM').parse(selectedMonth)),
                       style: const TextStyle(fontSize: 16),
                     ),
@@ -462,8 +538,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 borderRadius: BorderRadius.circular(12),
                 color:
                     Theme.of(context).brightness == Brightness.dark
-                        ? Colors.purpleAccent.withOpacity(0.2)
-                        : Colors.purpleAccent.shade100.withOpacity(0.15),
+                        ? const Color(0xFF2E5C88).withOpacity(0.2)
+                        : const Color(0xFF2E5C88).withOpacity(0.15),
                 child: InkWell(
                   onTap: _showExportDialog,
                   borderRadius: BorderRadius.circular(12),
@@ -473,8 +549,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       Icons.ios_share,
                       color:
                           Theme.of(context).brightness == Brightness.dark
-                              ? Colors.purpleAccent.shade100
-                              : Colors.purpleAccent.shade200,
+                              ? const Color(0xFF2E5C88)
+                              : const Color(0xFF2E5C88),
                     ),
                   ),
                 ),
@@ -499,8 +575,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     decoration: BoxDecoration(
                       color:
                           Theme.of(context).brightness == Brightness.dark
-                              ? Colors.purpleAccent.withOpacity(0.15)
-                              : Colors.purpleAccent.shade100.withOpacity(0.15),
+                              ? const Color(0xFF2E5C88).withOpacity(0.15)
+                              : const Color(0xFF2E5C88).withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -508,8 +584,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       size: 64,
                       color:
                           Theme.of(context).brightness == Brightness.dark
-                              ? Colors.purpleAccent.shade100
-                              : Colors.purpleAccent.shade200,
+                              ? const Color(0xFF2E5C88)
+                              : const Color(0xFF2E5C88),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -543,8 +619,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           Theme.of(context).brightness == Brightness.dark
-                              ? Colors.purpleAccent.shade700
-                              : Colors.purpleAccent.shade200,
+                              ? const Color(0xFF2E5C88)
+                              : const Color(0xFF2E5C88),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
@@ -572,13 +648,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   gradient: LinearGradient(
                     colors:
                         Theme.of(context).brightness == Brightness.dark
-                            ? [
-                              Colors.purpleAccent.shade700,
-                              Colors.purple.shade900,
-                            ]
+                            ? [const Color(0xFF2E5C88), const Color(0xFF15294D)]
                             : [
-                              Colors.purpleAccent.shade200,
-                              Colors.purple.shade100,
+                              const Color(0xFF2E5C88),
+                              const Color(0xFF1E3D59),
                             ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -588,8 +661,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     BoxShadow(
                       color:
                           Theme.of(context).brightness == Brightness.dark
-                              ? Colors.purpleAccent.withOpacity(0.3)
-                              : Colors.purpleAccent.withOpacity(0.2),
+                              ? const Color(0xFF2E5C88).withOpacity(0.3)
+                              : const Color(0xFF2E5C88).withOpacity(0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -684,10 +757,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                     transaction.type == 'expense'
                                         ? Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? Colors.red.withOpacity(0.2)
-                                            : Colors.red.shade100.withOpacity(
-                                              0.5,
-                                            )
+                                            ? expenseColorDark.withOpacity(0.2)
+                                            : expenseColorLight.withOpacity(0.2)
                                         : Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? Colors.green.withOpacity(0.2)
@@ -773,11 +844,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                                             context,
                                                           ).brightness ==
                                                           Brightness.dark
-                                                      ? Colors.purpleAccent
+                                                      ? expenseColorDark
                                                           .withOpacity(0.15)
-                                                      : Colors
-                                                          .purpleAccent
-                                                          .shade100
+                                                      : expenseColorLight
                                                           .withOpacity(0.1)
                                                   : Theme.of(
                                                         context,
@@ -803,12 +872,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                                               context,
                                                             ).brightness ==
                                                             Brightness.dark
-                                                        ? Colors
-                                                            .purpleAccent
-                                                            .shade100
-                                                        : Colors
-                                                            .purpleAccent
-                                                            .shade200
+                                                        ? expenseColorDark
+                                                        : expenseColorLight
                                                     : Theme.of(
                                                           context,
                                                         ).brightness ==
@@ -832,8 +897,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                           transaction.type == 'expense'
                                               ? Theme.of(context).brightness ==
                                                       Brightness.dark
-                                                  ? Colors.red.shade300
-                                                  : Colors.red.shade700
+                                                  ? expenseColorDark
+                                                  : expenseColorLight
                                               : Theme.of(context).brightness ==
                                                   Brightness.dark
                                               ? Colors.green.shade300
@@ -861,8 +926,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         child: const Icon(Icons.add, color: Colors.white),
         backgroundColor:
             Theme.of(context).brightness == Brightness.dark
-                ? Colors.purpleAccent.shade700
-                : Colors.purpleAccent.shade200,
+                ? const Color(0xFF2E5C88)
+                : const Color(0xFF2E5C88),
         elevation: 4,
       ),
     );

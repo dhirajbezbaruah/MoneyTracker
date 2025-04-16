@@ -88,7 +88,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           controller: _nameController,
                           decoration: const InputDecoration(
                             labelText: 'Profile Name',
+                            counterText: '10 characters max',
                           ),
+                          maxLength: 10,
                           textCapitalization: TextCapitalization.words,
                           autofocus: true,
                         ),
@@ -184,7 +186,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           controller: _nameController,
                           decoration: const InputDecoration(
                             labelText: 'Profile Name',
+                            counterText: '10 characters max',
                           ),
+                          maxLength: 10,
                           textCapitalization: TextCapitalization.words,
                           autofocus: true,
                         ),
@@ -359,12 +363,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: IconButton.styleFrom(
                 backgroundColor:
                     Theme.of(context).brightness == Brightness.dark
-                        ? Colors.purpleAccent.withOpacity(0.15)
-                        : Colors.purpleAccent.shade100.withOpacity(0.15),
+                        ? const Color(0xFF2E5C88).withOpacity(0.15)
+                        : const Color(0xFF2E5C88).withOpacity(0.1),
                 foregroundColor:
                     Theme.of(context).brightness == Brightness.dark
-                        ? Colors.purpleAccent.shade100
-                        : Colors.purpleAccent.shade200,
+                        ? const Color(0xFF2E5C88)
+                        : const Color(0xFF2E5C88),
               ),
             ),
           ),
@@ -386,12 +390,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: IconButton.styleFrom(
                 backgroundColor:
                     Theme.of(context).brightness == Brightness.dark
-                        ? Colors.purpleAccent.withOpacity(0.15)
-                        : Colors.purpleAccent.shade100.withOpacity(0.15),
+                        ? const Color(0xFF2E5C88).withOpacity(0.15)
+                        : const Color(0xFF2E5C88).withOpacity(0.1),
                 foregroundColor:
                     Theme.of(context).brightness == Brightness.dark
-                        ? Colors.purpleAccent.shade100
-                        : Colors.purpleAccent.shade200,
+                        ? const Color(0xFF2E5C88)
+                        : const Color(0xFF2E5C88),
               ),
             ),
           ),
@@ -416,9 +420,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color:
                                   Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.purpleAccent.withOpacity(0.15)
-                                      : Colors.purpleAccent.shade100
-                                          .withOpacity(0.15),
+                                      ? const Color(
+                                        0xFF2E5C88,
+                                      ).withOpacity(0.15)
+                                      : const Color(
+                                        0xFF2E5C88,
+                                      ).withOpacity(0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -427,8 +434,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color:
                                   Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.purpleAccent.shade100
-                                      : Colors.purpleAccent.shade200,
+                                      ? const Color(0xFF2E5C88)
+                                      : const Color(0xFF2E5C88),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -465,8 +472,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               backgroundColor:
                                   Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.purpleAccent.shade700
-                                      : Colors.purpleAccent.shade200,
+                                      ? const Color(0xFF2E5C88)
+                                      : const Color(0xFF2E5C88),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -493,23 +500,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           gradient: LinearGradient(
                             colors:
                                 profile.isSelected
-                                    ? Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? [
-                                          Colors.purpleAccent.shade700,
-                                          Colors.purple.shade900,
-                                        ]
-                                        : [
-                                          Colors.purpleAccent.shade200,
-                                          Colors.purple.shade100,
-                                        ]
+                                    ? [
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? const Color(0xFF2E5C88)
+                                          : const Color(0xFF2E5C88),
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? const Color(0xFF15294D)
+                                          : const Color(0xFF1E3D59),
+                                    ]
                                     : Theme.of(context).brightness ==
                                         Brightness.dark
                                     ? [
-                                      Theme.of(context).colorScheme.surface,
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.surface.withOpacity(0.7),
+                                      Colors.grey.shade800,
+                                      Colors.grey.shade900,
                                     ]
                                     : [Colors.white, Colors.grey.shade50],
                             begin: Alignment.topLeft,
@@ -522,29 +527,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   profile.isSelected
                                       ? Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.purpleAccent.withOpacity(0.3)
-                                          : Colors.purpleAccent.withOpacity(0.2)
+                                          ? const Color(
+                                            0xFF2E5C88,
+                                          ).withOpacity(0.3)
+                                          : const Color(
+                                            0xFF2E5C88,
+                                          ).withOpacity(0.2)
                                       : Colors.black.withOpacity(0.04),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                               spreadRadius: profile.isSelected ? 1 : 0,
                             ),
                           ],
-                          border:
-                              profile.isSelected
-                                  ? null
-                                  : Border.all(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.purpleAccent.withOpacity(
-                                              0.1,
-                                            )
-                                            : Colors.purpleAccent.withOpacity(
-                                              0.08,
-                                            ),
-                                    width: 1.5,
-                                  ),
+                          border: Border.all(
+                            color:
+                                profile.isSelected
+                                    ? Colors.transparent
+                                    : Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey.shade700
+                                    : const Color(0xFF2E5C88).withOpacity(0.15),
+                            width: 1.5,
+                          ),
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
@@ -561,19 +565,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ? Colors.white.withOpacity(0.25)
                                     : Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.purpleAccent.withOpacity(0.15)
-                                    : Colors.purpleAccent.shade100.withOpacity(
-                                      0.15,
-                                    ),
+                                    ? const Color(0xFF2E5C88).withOpacity(0.15)
+                                    : const Color(0xFF2E5C88).withOpacity(0.1),
                             child: Icon(
                               _availableIcons[profile.iconName] ?? Icons.person,
                               color:
                                   profile.isSelected
                                       ? Colors.white
-                                      : Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.purpleAccent.shade100
-                                      : Colors.purpleAccent.shade200,
+                                      : const Color(0xFF2E5C88),
                               size: 22,
                             ),
                           ),
@@ -587,8 +586,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ? Colors.white
                                       : Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.white.withOpacity(0.9)
-                                      : Colors.black87,
+                                      ? Colors.grey.shade200
+                                      : const Color(0xFF1E3D59),
                             ),
                           ),
                           subtitle:
@@ -597,16 +596,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     'Active profile',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color:
-                                          profile.isSelected
-                                              ? Colors.white.withOpacity(0.8)
-                                              : Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.grey.shade400
-                                              : Colors.grey.shade600,
+                                      color: Colors.white.withOpacity(0.8),
                                     ),
                                   )
-                                  : null,
+                                  : Text(
+                                    'Tap to activate',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.grey.shade400
+                                              : const Color(
+                                                0xFF2E5C88,
+                                              ).withOpacity(0.7),
+                                    ),
+                                  ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -619,9 +624,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           ? Colors.white.withOpacity(0.2)
                                           : Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.purpleAccent.withOpacity(0.1)
-                                          : Colors.purpleAccent.shade100
-                                              .withOpacity(0.1),
+                                          ? const Color(
+                                            0xFF2E5C88,
+                                          ).withOpacity(0.1)
+                                          : const Color(
+                                            0xFF2E5C88,
+                                          ).withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: InkWell(
@@ -634,8 +642,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             ? Colors.white
                                             : Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? Colors.purpleAccent.shade100
-                                            : Colors.purpleAccent.shade200,
+                                            ? const Color(0xFF2E5C88)
+                                            : const Color(0xFF2E5C88),
                                     size: 20,
                                   ),
                                 ),

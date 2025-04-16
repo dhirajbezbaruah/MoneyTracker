@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.money_tracker"
+    namespace = "com.fincalculators.moneytrack"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.money_tracker"
+        applicationId = "com.fincalculators.moneytrack"
         minSdk = 21 // Set minimum SDK version to 21 for open_file_plus
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

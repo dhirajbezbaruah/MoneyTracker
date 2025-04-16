@@ -31,196 +31,109 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void _showAddCategoryDialog() {
     _categoryController.clear();
     String dialogType = _selectedType;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final mainColor = const Color(0xFF2E5C88);
 
     showDialog(
       context: context,
       builder:
           (context) => StatefulBuilder(
             builder:
-                (context, setDialogState) => AlertDialog(
-                  title: Row(
-                    children: [
-                      Icon(
-                        dialogType == 'expense' ? Icons.category : Icons.wallet,
-                        color:
-                            dialogType == 'expense'
-                                ? Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.purpleAccent.shade100
-                                    : Colors.purpleAccent.shade200
-                                : Theme.of(context).brightness ==
-                                    Brightness.dark
-                                ? Colors.green.shade300
-                                : Colors.green.shade600,
-                        size: 24,
+                (context, setDialogState) => Theme(
+                  data: theme.copyWith(
+                    dialogTheme: DialogTheme(
+                      backgroundColor: colorScheme.surface,
+                      surfaceTintColor: colorScheme.surfaceTint,
+                      elevation: 4.0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.0),
                       ),
-                      const SizedBox(width: 12),
-                      const Text('Add Category'),
-                    ],
+                    ),
                   ),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: _categoryController,
-                        decoration: InputDecoration(
-                          labelText: 'Category Name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  dialogType == 'expense'
-                                      ? Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.purpleAccent.withOpacity(0.5)
-                                          : Colors.purpleAccent.shade100
-                                      : Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.green.shade300.withOpacity(0.5)
-                                      : Colors.green.shade200,
+                  child: AlertDialog(
+                    title: Text('Add Category'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _categoryController,
+                          decoration: InputDecoration(
+                            labelText: 'Category Name',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            filled: true,
+                            fillColor: colorScheme.surfaceVariant.withOpacity(
+                              0.1,
                             ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              width: 2,
-                              color:
-                                  dialogType == 'expense'
-                                      ? Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.purpleAccent.shade100
-                                          : Colors.purpleAccent.shade200
-                                      : Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.green.shade300
-                                      : Colors.green.shade600,
+                          textCapitalization: TextCapitalization.words,
+                          autofocus: true,
+                        ),
+                        const SizedBox(height: 16),
+                        SegmentedButton<String>(
+                          segments: [
+                            ButtonSegment(
+                              value: 'expense',
+                              label: const Text('Expense'),
+                              icon: const Icon(Icons.category),
                             ),
-                          ),
-                          filled: true,
-                          fillColor:
-                              dialogType == 'expense'
-                                  ? Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.purpleAccent.withOpacity(0.1)
-                                      : Colors.purple.shade50
-                                  : Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.green.shade900.withOpacity(0.1)
-                                  : Colors.green.shade50,
-                          prefixIcon: Icon(
-                            dialogType == 'expense'
-                                ? Icons.category
-                                : Icons.wallet,
-                            color:
-                                dialogType == 'expense'
-                                    ? Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.purpleAccent.shade100
-                                        : Colors.purpleAccent.shade200
-                                    : Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.green.shade300
-                                    : Colors.green.shade600,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 12,
+                            ButtonSegment(
+                              value: 'income',
+                              label: const Text('Income'),
+                              icon: const Icon(Icons.wallet),
+                            ),
+                          ],
+                          selected: {dialogType},
+                          onSelectionChanged: (Set<String> newSelection) {
+                            setDialogState(() {
+                              dialogType = newSelection.first;
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith((
+                              states,
+                            ) {
+                              if (states.contains(MaterialState.selected)) {
+                                return mainColor.withOpacity(0.1);
+                              }
+                              return null;
+                            }),
                           ),
                         ),
-                        textCapitalization: TextCapitalization.words,
-                        autofocus: true,
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Category Type',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white.withOpacity(0.9)
-                                  : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<String>(
-                        segments: [
-                          ButtonSegment(
-                            value: 'expense',
-                            label: const Text('Expense'),
-                            icon: const Icon(Icons.category),
-                          ),
-                          ButtonSegment(
-                            value: 'income',
-                            label: const Text('Income'),
-                            icon: const Icon(Icons.wallet),
-                          ),
-                        ],
-                        selected: {dialogType},
-                        onSelectionChanged: (Set<String> newSelection) {
-                          setDialogState(() {
-                            dialogType = newSelection.first;
-                          });
+                      FilledButton(
+                        onPressed: () {
+                          if (_categoryController.text.isNotEmpty) {
+                            context.read<TransactionProvider>().addCategory(
+                              app_models.Category(
+                                name: _categoryController.text,
+                                type: dialogType,
+                              ),
+                            );
+                            Navigator.pop(context);
+                          }
                         },
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.resolveWith((
-                            states,
-                          ) {
-                            if (states.contains(MaterialState.selected)) {
-                              return dialogType == 'expense'
-                                  ? Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.purpleAccent.withOpacity(0.3)
-                                      : Colors.purpleAccent.shade100
-                                          .withOpacity(0.3)
-                                  : Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.green.shade900.withOpacity(0.3)
-                                  : Colors.green.shade100.withOpacity(0.3);
-                            }
-                            return null;
-                          }),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: mainColor,
+                          foregroundColor: Colors.white,
                         ),
+                        child: const Text('Save'),
                       ),
                     ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    FilledButton.icon(
-                      onPressed: () {
-                        if (_categoryController.text.isNotEmpty) {
-                          context.read<TransactionProvider>().addCategory(
-                            app_models.Category(
-                              name: _categoryController.text,
-                              type: dialogType,
-                            ),
-                          );
-                          Navigator.pop(context);
-                        }
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            dialogType == 'expense'
-                                ? Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.purpleAccent.shade700
-                                    : Colors.purpleAccent.shade200
-                                : Theme.of(context).brightness ==
-                                    Brightness.dark
-                                ? Colors.green.shade700
-                                : Colors.green.shade500,
-                      ),
-                    ),
-                  ],
                 ),
           ),
     );
@@ -231,14 +144,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     List<app_models.Category> categories,
   ) {
     final title = type == 'income' ? 'Income Categories' : 'Expense Categories';
-    final color =
-        type == 'income'
-            ? Theme.of(context).brightness == Brightness.dark
-                ? Colors.green.shade300
-                : Colors.green.shade600
-            : Theme.of(context).brightness == Brightness.dark
-            ? Colors.purpleAccent.shade100
-            : Colors.purpleAccent.shade200;
+    final mainColor = const Color(0xFF2E5C88);
+    final deleteColor = const Color(0xFFE57373);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,30 +156,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors:
-                    type == 'income'
-                        ? Theme.of(context).brightness == Brightness.dark
-                            ? [
-                              Colors.green.shade800.withOpacity(0.8),
-                              Colors.teal.shade900.withOpacity(0.6),
-                            ]
-                            : [
-                              Colors.green.shade400.withOpacity(0.8),
-                              Colors.lightGreen.withOpacity(0.6),
-                            ]
-                        : Theme.of(context).brightness == Brightness.dark
-                        ? [Colors.purpleAccent.shade700, Colors.purple.shade900]
-                        : [
-                          Colors.purpleAccent.shade200,
-                          Colors.purple.shade100,
-                        ],
+                colors: [mainColor, mainColor.withOpacity(0.8)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.2),
+                  color: mainColor.withOpacity(0.2),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -361,14 +252,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: mainColor.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       type == 'income'
                           ? Icons.wallet_outlined
                           : Icons.category_outlined,
-                      color: color.withOpacity(0.7),
+                      color: mainColor.withOpacity(0.7),
                       size: 24,
                     ),
                   ),
@@ -423,6 +314,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 actions: [
                                   FilledButton(
                                     onPressed: () => Navigator.pop(context),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: mainColor,
+                                    ),
                                     child: const Text('OK'),
                                   ),
                                 ],
@@ -450,7 +344,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                     Navigator.pop(context);
                                   },
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.red,
+                                    backgroundColor: mainColor,
                                   ),
                                   child: const Text('Delete'),
                                 ),
@@ -485,7 +379,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           ),
                         ],
                         border: Border.all(
-                          color: color.withOpacity(0.2),
+                          color: mainColor.withOpacity(0.2),
                           width: 1.5,
                         ),
                       ),
@@ -497,12 +391,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.15),
+                            color: mainColor.withOpacity(0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             type == 'income' ? Icons.wallet : Icons.category,
-                            color: color,
+                            color: mainColor,
                             size: 22,
                           ),
                         ),
@@ -520,13 +414,89 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         trailing: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? deleteColor.withOpacity(0.15)
+                                    : deleteColor.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.chevron_right,
-                            color: color,
-                            size: 20,
+                          child: InkWell(
+                            onTap: () async {
+                              final provider =
+                                  context.read<TransactionProvider>();
+                              final canDelete = await provider
+                                  .canDeleteCategory(category.id!);
+
+                              if (!mounted) return;
+
+                              if (!canDelete) {
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: const Text(
+                                          'Cannot Delete Category',
+                                        ),
+                                        content: Text(
+                                          'The category "${category.name}" cannot be deleted because '
+                                          'it is being used by one or more transactions.',
+                                        ),
+                                        actions: [
+                                          FilledButton(
+                                            onPressed:
+                                                () => Navigator.pop(context),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: mainColor,
+                                            ),
+                                            child: const Text('OK'),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                                return;
+                              }
+
+                              if (!mounted) return;
+                              showDialog(
+                                context: context,
+                                builder:
+                                    (context) => AlertDialog(
+                                      title: const Text('Delete Category'),
+                                      content: Text(
+                                        'Are you sure you want to delete "${category.name}"?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.pop(context),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () {
+                                            provider.deleteCategory(
+                                              category.id!,
+                                            );
+                                            Navigator.pop(context);
+                                          },
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: mainColor,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                              );
+                            },
+                            customBorder: const CircleBorder(),
+                            child: Icon(
+                              Icons.delete_outline,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? deleteColor
+                                      : deleteColor,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -618,14 +588,20 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddCategoryDialog,
         tooltip: 'Add Category',
-        child: const Icon(Icons.add, color: Colors.white),
+        label: const Row(
+          children: [
+            Icon(Icons.add, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Category', style: TextStyle(color: Colors.white)),
+          ],
+        ),
         backgroundColor:
             Theme.of(context).brightness == Brightness.dark
-                ? Colors.purpleAccent.shade700
-                : Colors.purpleAccent.shade200,
+                ? const Color(0xFF2E5C88)
+                : const Color(0xFF2E5C88),
         elevation: 4,
       ),
     );

@@ -14,6 +14,7 @@ class TransactionProvider with ChangeNotifier {
   final List<Profile> _profiles = [];
   MonthlyBudget? _currentBudget;
   Profile? _selectedProfile;
+  String _currentlyViewedMonth = DateFormat('yyyy-MM').format(DateTime.now());
 
   List<app_models.Transaction> get transactions => _transactions;
   List<app_models.Category> get categories => _categories;
@@ -119,12 +120,21 @@ class TransactionProvider with ChangeNotifier {
 
   Future<void> loadTransactions(String month) async {
     if (_selectedProfile == null) await loadProfiles();
+    _currentlyViewedMonth = month;
+
+    final currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
 
     final db = await DatabaseHelper.instance.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
-      where: "date LIKE ? AND profile_id = ?",
-      whereArgs: ['$month%', _selectedProfile!.id],
+      where:
+          month == currentMonth
+              ? "date LIKE ? AND profile_id = ?"
+              : "date LIKE ? AND profile_id = ? AND NOT date LIKE ?",
+      whereArgs:
+          month == currentMonth
+              ? ['$month%', _selectedProfile!.id]
+              : ['$month%', _selectedProfile!.id, '$currentMonth%'],
     );
 
     _transactions.clear();
@@ -167,9 +177,14 @@ class TransactionProvider with ChangeNotifier {
     final profileId = profile!.id!;
     final db = await DatabaseHelper.instance.database;
     final id = await db.insert('transactions', transaction.toMap());
-    _transactions.add(
-      app_models.Transaction.fromMap({...transaction.toMap(), 'id': id}),
-    );
+
+    // Only add to UI list if transaction month matches currently viewed month
+    final transactionMonth = DateFormat('yyyy-MM').format(transaction.date);
+    if (transactionMonth == _currentlyViewedMonth) {
+      _transactions.add(
+        app_models.Transaction.fromMap({...transaction.toMap(), 'id': id}),
+      );
+    }
 
     // If this is an income transaction, add it to the current month's budget
     if (transaction.type == 'income') {

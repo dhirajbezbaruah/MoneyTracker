@@ -199,10 +199,8 @@ class DatabaseHelper {
           'transactions_${DateFormat('yyyy_MM_dd').format(startDate)}_to_${DateFormat('yyyy_MM_dd').format(endDate)}.csv';
 
       if (Platform.isAndroid) {
-        // Use Documents directory for consistent behavior
-        final directory = Directory(
-          '/storage/emulated/0/Documents/MoneyTracker',
-        );
+        // Use Downloads directory instead of Documents
+        final directory = Directory('/storage/emulated/0/Downloads/MoneyTrack');
 
         print('Attempting to access directory: ${directory.path}');
         if (!await directory.exists()) {
@@ -247,15 +245,26 @@ class DatabaseHelper {
       final csvData = StringBuffer();
       csvData.writeln('Date,Type,Category,Description,Amount');
 
+      String escapeField(String field) {
+        if (field.contains(',') ||
+            field.contains('"') ||
+            field.contains('\n')) {
+          return '"${field.replaceAll('"', '""')}"';
+        }
+        return field;
+      }
+
       for (var t in transactions) {
         final date = DateFormat(
           'yyyy-MM-dd',
         ).format(DateTime.parse(t['date'] as String));
-        final type = t['type'] as String;
-        final category = t['category_name'] as String;
-        final description = t['description'] ?? '';
+        final type = escapeField(t['type'] as String);
+        final category = escapeField(t['category_name'] as String);
+        // Cast description to String? first, then use null coalescing
+        final description = escapeField((t['description'] as String?) ?? '');
         final amount = (t['amount'] as num).toStringAsFixed(2);
-        csvData.writeln('$date,"$type","$category","$description",₹$amount');
+
+        csvData.writeln('$date,$type,$category,$description,$amount');
       }
 
       print('Writing CSV file to: $filePath');
