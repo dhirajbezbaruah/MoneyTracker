@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_tracker/screens/currency_settings_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
@@ -52,26 +53,24 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? [
-                                const Color(0xFF2E5C88),
-                                const Color(0xFF15294D),
-                              ]
-                              : [
-                                const Color(0xFF2E5C88),
-                                const Color(0xFF1E3D59),
-                              ],
+                      colors: Theme.of(context).brightness == Brightness.dark
+                          ? [
+                              const Color(0xFF2E5C88),
+                              const Color(0xFF15294D),
+                            ]
+                          : [
+                              const Color(0xFF2E5C88),
+                              const Color(0xFF1E3D59),
+                            ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF2E5C88).withOpacity(0.3)
-                                : const Color(0xFF2E5C88).withOpacity(0.2),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF2E5C88).withOpacity(0.3)
+                            : const Color(0xFF2E5C88).withOpacity(0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -80,8 +79,11 @@ class SettingsScreen extends StatelessWidget {
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
-                      vertical: 12,
+                      vertical: 4, // Reduced from 12 to 4 to match other rows
                     ),
+                    visualDensity: VisualDensity(
+                        vertical:
+                            -4), // Added negative visual density for consistency
                     leading: CircleAvatar(
                       backgroundColor: Colors.white.withOpacity(0.25),
                       child: Icon(Icons.person, color: Colors.white),
@@ -119,7 +121,24 @@ class SettingsScreen extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(
+                    height: 12), // Consistent spacing between sections
+                _buildSettingsCard(
+                  context,
+                  title: 'Currency',
+                  subtitle: 'Change your preferred currency',
+                  iconData: Icons.currency_exchange,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CurrencySettingsScreen(),
+                      ),
+                    );
+                  },
+                  showTrailing: true,
+                ),
+                const SizedBox(height: 16),
                 _buildSettingsCard(
                   context,
                   title: 'Appearance',
@@ -161,10 +180,9 @@ class SettingsScreen extends StatelessWidget {
                       applicationIcon: Icon(
                         Icons.account_balance_wallet,
                         size: 48,
-                        color:
-                            Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF2E5C88)
-                                : const Color(0xFF2E5C88),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF2E5C88)
+                            : const Color(0xFF2E5C88),
                       ),
                       children: [
                         const Text(
@@ -190,7 +208,7 @@ class SettingsScreen extends StatelessWidget {
                   },
                   showTrailing: true,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 60), // Space for ads
               ],
             ),
           );
@@ -208,16 +226,16 @@ class SettingsScreen extends StatelessWidget {
     bool showTrailing = false,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 3), // Further reduced vertical margin
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors:
-              Theme.of(context).brightness == Brightness.dark
-                  ? [
-                    Theme.of(context).colorScheme.surface,
-                    Theme.of(context).colorScheme.surface.withOpacity(0.8),
-                  ]
-                  : [Colors.white, Colors.grey.shade50],
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+                  Theme.of(context).colorScheme.surface,
+                  Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                ]
+              : [Colors.white, Colors.grey.shade50],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -231,34 +249,34 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
         border: Border.all(
-          color:
-              Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF2E5C88).withOpacity(0.1)
-                  : const Color(0xFF2E5C88).withOpacity(0.08),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF2E5C88).withOpacity(0.1)
+              : const Color(0xFF2E5C88).withOpacity(0.08),
           width: 1.5,
         ),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 12,
+          horizontal: 16,
+          vertical: 4, // Further reduced vertical padding
         ),
+        visualDensity: VisualDensity(
+            vertical:
+                -4), // Add negative visual density to make it more compact
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF2E5C88).withOpacity(0.15)
-                    : const Color(0xFF2E5C88).withOpacity(0.1),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF2E5C88).withOpacity(0.15)
+                : const Color(0xFF2E5C88).withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
             iconData,
             size: 22,
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF2E5C88)
-                    : const Color(0xFF2E5C88),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF2E5C88)
+                : const Color(0xFF2E5C88),
           ),
         ),
         title: Text(
@@ -266,42 +284,37 @@ class SettingsScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.9)
-                    : Colors.black87,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.9)
+                : Colors.black87,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey.shade400
-                    : Colors.grey.shade700,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey.shade400
+                : Colors.grey.shade700,
           ),
         ),
-        trailing:
-            showTrailing
-                ? Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF2E5C88).withOpacity(0.1)
-                            : const Color(0xFF2E5C88).withOpacity(0.05),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.chevron_right,
-                    color:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF2E5C88)
-                            : const Color(0xFF2E5C88),
-                    size: 20,
-                  ),
-                )
-                : null,
+        trailing: showTrailing
+            ? Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2E5C88).withOpacity(0.1)
+                      : const Color(0xFF2E5C88).withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2E5C88)
+                      : const Color(0xFF2E5C88),
+                  size: 20,
+                ),
+              )
+            : null,
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),

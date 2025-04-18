@@ -1,15 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import '../models/transaction.dart' as app_models;
 import '../providers/transaction_provider.dart';
+import '../providers/currency_provider.dart';
 import '../widgets/export_dialog.dart';
 import '../widgets/add_transaction_dialog.dart';
 
@@ -63,285 +58,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     });
   }
 
-  Future<bool> _requestStoragePermission() async {
-    if (!Platform.isAndroid) return true;
-
-    // Check Android version
-    final sdkInt = await DeviceInfoPlugin().androidInfo.then(
-      (info) => info.version.sdkInt,
-    );
-
-    if (sdkInt >= 33) {
-      // Android 13 and above
-      final status = await Permission.manageExternalStorage.status;
-      if (status.isGranted) return true;
-
-      // Show explanation dialog for Android 13+
-      if (!mounted) return false;
-      final shouldRequest = await showDialog<bool>(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('Permission Needed'),
-              content: const Text(
-                'Money Tracker needs permission to save files in Documents folder. '
-                'Please grant "All files access" permission in the next screen.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Continue'),
-                ),
-              ],
-            ),
-      );
-
-      if (shouldRequest != true) return false;
-
-      // Request permission
-      final result = await Permission.manageExternalStorage.request();
-      if (result.isGranted) return true;
-
-      if (result.isPermanentlyDenied) {
-        if (!mounted) return false;
-        final shouldOpenSettings = await showDialog<bool>(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('Permission Required'),
-                content: const Text(
-                  'All files access permission is required to save exported files. '
-                  'Please enable it in settings.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Open Settings'),
-                  ),
-                ],
-              ),
-        );
-
-        if (shouldOpenSettings == true) {
-          await openAppSettings();
-          final newStatus = await Permission.manageExternalStorage.status;
-          return newStatus.isGranted;
-        }
-        return false;
-      }
-      return result.isGranted;
-    } else {
-      // For Android 12 and below
-      if (await Permission.storage.request().isGranted) {
-        return true;
-      }
-
-      final status = await Permission.storage.status;
-      if (status.isGranted) {
-        return true;
-      }
-
-      // Show explanation dialog
-      if (!mounted) return false;
-      final shouldRequest = await showDialog<bool>(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('Permission Needed'),
-              content: const Text(
-                'Money Tracker needs permission to save exported files. '
-                'Please grant storage permission in the next screen.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Continue'),
-                ),
-              ],
-            ),
-      );
-
-      if (shouldRequest != true) return false;
-
-      // Request permission
-      final result = await Permission.storage.request();
-      if (result.isPermanentlyDenied) {
-        if (!mounted) return false;
-        final shouldOpenSettings = await showDialog<bool>(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('Permission Required'),
-                content: const Text(
-                  'Storage permission is required to save exported files. '
-                  'Please enable storage permission in settings.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Open Settings'),
-                  ),
-                ],
-              ),
-        );
-
-        if (shouldOpenSettings == true) {
-          await openAppSettings();
-          final newStatus = await Permission.storage.status;
-          return newStatus.isGranted;
-        }
-        return false;
-      }
-      return result.isGranted;
-    }
-  }
-
   Future<void> _showExportDialog() async {
-    if (Platform.isAndroid) {
-      final hasPermission = await _requestStoragePermission();
-      if (!hasPermission) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Storage permission is required to export files'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-    }
-
     final result = await showDialog<Map<String, DateTime>>(
       context: context,
       builder: (context) => const ExportDialog(),
     );
 
-    if (result != null) {
+    if (result != null && mounted) {
       final startDate = result['startDate']!;
       final endDate = result['endDate']!;
       final provider = context.read<TransactionProvider>();
 
       try {
-        final filePath = await provider.exportTransactions(startDate, endDate);
-        print('Export successful, filePath: $filePath');
-
-        if (!mounted) return;
-
-        final theme = Theme.of(context);
-        final colorScheme = theme.colorScheme;
-
-        final choice = await showDialog<String>(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                backgroundColor: colorScheme.surface,
-                surfaceTintColor: colorScheme.surfaceTint,
-                elevation: 4.0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
-                title: Text(
-                  'Export Successful',
-                  style: TextStyle(color: colorScheme.onSurface),
-                ),
-                content: Text('File saved to:\n$filePath'),
-                actions: [
-                  TextButton(
-                    onPressed: () async {
-                      Navigator.pop(context, 'open');
-                      if (Platform.isAndroid) {
-                        try {
-                          final uri =
-                              "content://com.fincalculators.moneytrack.fileprovider/external_storage_root/" +
-                              filePath.replaceAll("/storage/emulated/0/", "");
-
-                          final intent = AndroidIntent(
-                            action: 'android.intent.action.VIEW',
-                            type: 'text/csv',
-                            data: uri,
-                            flags: <int>[
-                              0x00000001, // FLAG_GRANT_READ_URI_PERMISSION
-                              0x10000000, // FLAG_ACTIVITY_NEW_TASK
-                            ],
-                          );
-                          await intent.launch();
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Could not open file: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      } else {
-                        try {
-                          final uri = Uri.file(filePath);
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(
-                              uri,
-                              mode: LaunchMode.platformDefault,
-                            );
-                          } else {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Could not open file'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Could not open file: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: colorScheme.primary,
-                    ),
-                    child: const Text('Open'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.pop(context, 'share');
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                    ),
-                    child: const Text('Share'),
-                  ),
-                ],
-              ),
-        );
-
-        if (choice == 'share') {
-          print('Sharing file: $filePath');
-          final file = XFile(filePath);
-          await Share.shareXFiles([file], text: 'Exported transactions');
-        }
+        await provider.exportTransactions(startDate, endDate);
       } catch (e) {
         print('Export failed: $e');
         if (!mounted) return;
@@ -359,34 +88,32 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     HapticFeedback.mediumImpact();
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Transaction'),
-            content: const Text(
-              'Are you sure you want to delete this transaction?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  context.read<TransactionProvider>().deleteTransaction(
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Transaction'),
+        content: const Text(
+          'Are you sure you want to delete this transaction?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<TransactionProvider>().deleteTransaction(
                     transaction.id!,
                   );
-                  Navigator.pop(context);
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor:
-                      Theme.of(context).brightness == Brightness.dark
-                          ? expenseColorDark
-                          : expenseColorLight,
-                ),
-                child: const Text('Delete'),
-              ),
-            ],
+              Navigator.pop(context);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? expenseColorDark
+                  : expenseColorLight,
+            ),
+            child: const Text('Delete'),
           ),
+        ],
+      ),
     );
   }
 
@@ -419,8 +146,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         setState(() {
                           selectedMonth = availableMonths[index + 1];
                           context.read<TransactionProvider>().loadTransactions(
-                            selectedMonth,
-                          );
+                                selectedMonth,
+                              );
                         });
                       }
                     },
@@ -431,68 +158,62 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       if (monthIndex >= 0) {
                         final result = await showDialog<String>(
                           context: context,
-                          builder:
-                              (context) => SimpleDialog(
-                                title: const Text('Select Month'),
-                                children: [
-                                  SizedBox(
-                                    width: double.maxFinite,
-                                    height: 300,
-                                    child: ListView.builder(
-                                      itemCount: availableMonths.length,
-                                      itemBuilder: (context, index) {
-                                        final month = availableMonths[index];
-                                        final date = DateFormat(
-                                          'yyyy-MM',
-                                        ).parse(month);
-                                        final isSelected =
-                                            month == selectedMonth;
+                          builder: (context) => SimpleDialog(
+                            title: const Text('Select Month'),
+                            children: [
+                              SizedBox(
+                                width: double.maxFinite,
+                                height: 300,
+                                child: ListView.builder(
+                                  itemCount: availableMonths.length,
+                                  itemBuilder: (context, index) {
+                                    final month = availableMonths[index];
+                                    final date = DateFormat(
+                                      'yyyy-MM',
+                                    ).parse(month);
+                                    final isSelected = month == selectedMonth;
 
-                                        return ListTile(
-                                          leading:
-                                              isSelected
-                                                  ? Icon(
-                                                    Icons.check_circle,
-                                                    color:
-                                                        Theme.of(
-                                                          context,
-                                                        ).primaryColor,
-                                                  )
-                                                  : const Icon(
-                                                    Icons.calendar_month,
-                                                    color: Colors.grey,
-                                                  ),
-                                          title: Text(
-                                            DateFormat(
-                                              'MMMM yyyy',
-                                            ).format(date),
-                                            style: TextStyle(
-                                              fontWeight:
-                                                  isSelected
-                                                      ? FontWeight.bold
-                                                      : FontWeight.normal,
+                                    return ListTile(
+                                      leading: isSelected
+                                          ? Icon(
+                                              Icons.check_circle,
+                                              color: Theme.of(
+                                                context,
+                                              ).primaryColor,
+                                            )
+                                          : const Icon(
+                                              Icons.calendar_month,
+                                              color: Colors.grey,
                                             ),
-                                          ),
-                                          onTap: () {
-                                            Navigator.pop(context, month);
-                                          },
-                                          tileColor:
-                                              isSelected
-                                                  ? Theme.of(context)
-                                                      .primaryColor
-                                                      .withOpacity(0.1)
-                                                  : null,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                        );
+                                      title: Text(
+                                        DateFormat(
+                                          'MMMM yyyy',
+                                        ).format(date),
+                                        style: TextStyle(
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        Navigator.pop(context, month);
                                       },
-                                    ),
-                                  ),
-                                ],
+                                      tileColor: isSelected
+                                          ? Theme.of(context)
+                                              .primaryColor
+                                              .withOpacity(0.1)
+                                          : null,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          10,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
+                            ],
+                          ),
                         );
 
                         if (result != null) {
@@ -522,8 +243,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         setState(() {
                           selectedMonth = availableMonths[index - 1];
                           context.read<TransactionProvider>().loadTransactions(
-                            selectedMonth,
-                          );
+                                selectedMonth,
+                              );
                         });
                       }
                     },
@@ -536,10 +257,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               margin: const EdgeInsets.only(right: 12),
               child: Material(
                 borderRadius: BorderRadius.circular(12),
-                color:
-                    Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF2E5C88).withOpacity(0.2)
-                        : const Color(0xFF2E5C88).withOpacity(0.15),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF2E5C88).withOpacity(0.2)
+                    : const Color(0xFF2E5C88).withOpacity(0.15),
                 child: InkWell(
                   onTap: _showExportDialog,
                   borderRadius: BorderRadius.circular(12),
@@ -547,10 +267,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     padding: const EdgeInsets.all(8),
                     child: Icon(
                       Icons.ios_share,
-                      color:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2E5C88)
-                              : const Color(0xFF2E5C88),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF2E5C88)
+                          : const Color(0xFF2E5C88),
                     ),
                   ),
                 ),
@@ -573,19 +292,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2E5C88).withOpacity(0.15)
-                              : const Color(0xFF2E5C88).withOpacity(0.15),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF2E5C88).withOpacity(0.15)
+                          : const Color(0xFF2E5C88).withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.receipt_long,
                       size: 64,
-                      color:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2E5C88)
-                              : const Color(0xFF2E5C88),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF2E5C88)
+                          : const Color(0xFF2E5C88),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -594,10 +311,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.9)
-                              : Colors.grey.shade700,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withOpacity(0.9)
+                          : Colors.grey.shade700,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -605,10 +321,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     'Add your first transaction to start tracking',
                     style: TextStyle(
                       fontSize: 15,
-                      color:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -646,23 +361,21 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? [const Color(0xFF2E5C88), const Color(0xFF15294D)]
-                            : [
-                              const Color(0xFF2E5C88),
-                              const Color(0xFF1E3D59),
-                            ],
+                    colors: Theme.of(context).brightness == Brightness.dark
+                        ? [const Color(0xFF2E5C88), const Color(0xFF15294D)]
+                        : [
+                            const Color(0xFF2E5C88),
+                            const Color(0xFF1E3D59),
+                          ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF2E5C88).withOpacity(0.3)
-                              : const Color(0xFF2E5C88).withOpacity(0.2),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF2E5C88).withOpacity(0.3)
+                          : const Color(0xFF2E5C88).withOpacity(0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -719,7 +432,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     );
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
+                      margin: const EdgeInsets.only(
+                          bottom: 4), // Reduced from 6 to 4
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -728,19 +442,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
-                              vertical: 14,
+                              vertical: 8, // Reduced from 10 to 8
                             ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors:
-                                    Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? [
-                                          Theme.of(context).colorScheme.surface,
-                                          Theme.of(context).colorScheme.surface
-                                              .withOpacity(0.7),
-                                        ]
-                                        : [Colors.white, Colors.grey.shade50],
+                                colors: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? [
+                                        Theme.of(context).colorScheme.surface,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .surface
+                                            .withOpacity(0.7),
+                                      ]
+                                    : [Colors.white, Colors.grey.shade50],
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                               ),
@@ -753,18 +468,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 ),
                               ],
                               border: Border.all(
-                                color:
-                                    transaction.type == 'expense'
-                                        ? Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? expenseColorDark.withOpacity(0.2)
-                                            : expenseColorLight.withOpacity(0.2)
-                                        : Theme.of(context).brightness ==
+                                color: transaction.type == 'expense'
+                                    ? Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? expenseColorDark.withOpacity(0.2)
+                                        : expenseColorLight.withOpacity(0.2)
+                                    : Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? Colors.green.withOpacity(0.2)
                                         : Colors.green.shade100.withOpacity(
-                                          0.5,
-                                        ),
+                                            0.5,
+                                          ),
                                 width: 1.5,
                               ),
                             ),
@@ -783,13 +497,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.white.withOpacity(
-                                                    0.9,
-                                                  )
-                                                  : Colors.black87,
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white.withOpacity(
+                                                  0.9,
+                                                )
+                                              : Colors.black87,
                                         ),
                                       ),
                                       Text(
@@ -798,11 +511,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                         ).format(transaction.date),
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.grey.shade400
-                                                  : Colors.grey.shade700,
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade700,
                                         ),
                                       ),
                                     ],
@@ -820,13 +532,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.white.withOpacity(
-                                                    0.9,
-                                                  )
-                                                  : Colors.black87,
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white.withOpacity(
+                                                  0.9,
+                                                )
+                                              : Colors.black87,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 1,
@@ -838,25 +549,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color:
-                                              transaction.type == 'expense'
-                                                  ? Theme.of(
-                                                            context,
-                                                          ).brightness ==
-                                                          Brightness.dark
-                                                      ? expenseColorDark
-                                                          .withOpacity(0.15)
-                                                      : expenseColorLight
-                                                          .withOpacity(0.1)
-                                                  : Theme.of(
+                                          color: transaction.type == 'expense'
+                                              ? Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.dark
+                                                  ? expenseColorDark
+                                                      .withOpacity(0.15)
+                                                  : expenseColorLight
+                                                      .withOpacity(0.1)
+                                              : Theme.of(
                                                         context,
                                                       ).brightness ==
                                                       Brightness.dark
                                                   ? Colors.green.shade900
                                                       .withOpacity(0.3)
                                                   : Colors.green.withOpacity(
-                                                    0.1,
-                                                  ),
+                                                      0.1,
+                                                    ),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -866,15 +576,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
-                                            color:
-                                                transaction.type == 'expense'
-                                                    ? Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.dark
-                                                        ? expenseColorDark
-                                                        : expenseColorLight
-                                                    : Theme.of(
+                                            color: transaction.type == 'expense'
+                                                ? Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.dark
+                                                    ? expenseColorDark
+                                                    : expenseColorLight
+                                                : Theme.of(
                                                           context,
                                                         ).brightness ==
                                                         Brightness.dark
@@ -888,23 +597,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 ),
                                 Expanded(
                                   flex: 2,
-                                  child: Text(
-                                    '₹${transaction.amount.toStringAsFixed(0)}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color:
-                                          transaction.type == 'expense'
+                                  child: Consumer<CurrencyProvider>(
+                                    builder: (context, currencyProvider, _) {
+                                      return Text(
+                                        '${currencyProvider.currencySymbol}${transaction.amount.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: transaction.type == 'expense'
                                               ? Theme.of(context).brightness ==
                                                       Brightness.dark
                                                   ? expenseColorDark
                                                   : expenseColorLight
                                               : Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.green.shade300
-                                              : Colors.green.shade700,
-                                    ),
-                                    textAlign: TextAlign.right,
+                                                      Brightness.dark
+                                                  ? Colors.green.shade300
+                                                  : Colors.green.shade700,
+                                        ),
+                                        textAlign: TextAlign.right,
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
@@ -924,10 +636,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         onPressed: _showAddTransactionDialog,
         tooltip: 'Add Transaction',
         child: const Icon(Icons.add, color: Colors.white),
-        backgroundColor:
-            Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF2E5C88)
-                : const Color(0xFF2E5C88),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2E5C88)
+            : const Color(0xFF2E5C88),
         elevation: 4,
       ),
     );

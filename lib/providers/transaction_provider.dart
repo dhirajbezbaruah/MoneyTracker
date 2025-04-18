@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/transaction.dart' as app_models;
 import '../models/category.dart' as app_models;
 import '../models/monthly_budget.dart';
@@ -127,14 +128,12 @@ class TransactionProvider with ChangeNotifier {
     final db = await DatabaseHelper.instance.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
-      where:
-          month == currentMonth
-              ? "date LIKE ? AND profile_id = ?"
-              : "date LIKE ? AND profile_id = ? AND NOT date LIKE ?",
-      whereArgs:
-          month == currentMonth
-              ? ['$month%', _selectedProfile!.id]
-              : ['$month%', _selectedProfile!.id, '$currentMonth%'],
+      where: month == currentMonth
+          ? "date LIKE ? AND profile_id = ?"
+          : "date LIKE ? AND profile_id = ? AND NOT date LIKE ?",
+      whereArgs: month == currentMonth
+          ? ['$month%', _selectedProfile!.id]
+          : ['$month%', _selectedProfile!.id, '$currentMonth%'],
     );
 
     _transactions.clear();
@@ -189,9 +188,9 @@ class TransactionProvider with ChangeNotifier {
     // If this is an income transaction, add it to the current month's budget
     if (transaction.type == 'income') {
       final month = transaction.date.toString().substring(
-        0,
-        7,
-      ); // YYYY-MM format
+            0,
+            7,
+          ); // YYYY-MM format
       final currentBudget = await _getCurrentOrCreateBudget(month);
       await setBudget(
         MonthlyBudget(
@@ -356,19 +355,32 @@ class TransactionProvider with ChangeNotifier {
     return maps.map((map) => app_models.Transaction.fromMap(map)).toList();
   }
 
-  Future<String> exportTransactions(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    print('TransactionProvider: Calling DatabaseHelper.exportToCSV');
-    final filePath = await DatabaseHelper.instance.exportToCSV(
-      startDate,
-      endDate,
-    );
-    print(
-      'TransactionProvider: DatabaseHelper.exportToCSV returned path: $filePath',
-    );
-    return filePath;
+  Future<void> exportTransactions(DateTime startDate, DateTime endDate) async {
+    try {
+      print('TransactionProvider: Calling DatabaseHelper.exportToCSV');
+      final csvContent =
+          await DatabaseHelper.instance.exportToCSV(startDate, endDate);
+
+      final fileName =
+          'transactions_${DateFormat('yyyy_MM').format(startDate)}.csv';
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsString(csvContent);
+
+      await Share.shareFiles(
+        [tempFile.path],
+        mimeTypes: ['text/csv'],
+        subject: 'Money Track Transactions',
+      );
+
+      // Clean up the temporary file
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
+    } catch (e) {
+      print('Export error in exportTransactions: $e');
+      throw Exception('Failed to share transactions: $e');
+    }
   }
 
   Future<void> updateProfile(Profile profile) async {

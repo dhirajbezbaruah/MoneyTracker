@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_tracker/providers/currency_provider.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/transactions_screen.dart';
@@ -13,6 +14,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(
+          create: (_) => CurrencyProvider(),
+        ), // Add this line
       ],
       child: const MyApp(),
     ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/currency_provider.dart';
 import '../models/monthly_budget.dart';
 import '../widgets/expenses_pie_chart.dart';
 import '../widgets/add_transaction_dialog.dart';
@@ -81,47 +82,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showBudgetDialog() {
     final provider = context.read<TransactionProvider>();
+    final currencyProvider = context.read<CurrencyProvider>();
     _budgetController.text = provider.currentBudget?.amount.toString() ?? '';
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Set Monthly Budget'),
-            content: TextField(
+      builder: (context) => AlertDialog(
+        title: const Text('Set Monthly Budget'),
+        content: Consumer<CurrencyProvider>(
+          builder: (context, currencyProvider, _) {
+            return TextField(
               controller: _budgetController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Budget Amount',
-                prefixText: '₹',
+                prefixText: currencyProvider.currencySymbol,
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  final amount = double.tryParse(_budgetController.text);
-                  if (amount != null) {
-                    final selectedProfile = provider.selectedProfile;
-                    if (selectedProfile != null) {
-                      provider.setBudget(
-                        MonthlyBudget(
-                          month: DateFormat('yyyy-MM').format(selectedDate),
-                          amount: amount,
-                          profileId: selectedProfile.id!,
-                        ),
-                      );
-                      Navigator.pop(context);
-                    }
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
+          FilledButton(
+            onPressed: () {
+              final amount = double.tryParse(_budgetController.text);
+              if (amount != null) {
+                final selectedProfile = provider.selectedProfile;
+                if (selectedProfile != null) {
+                  provider.setBudget(
+                    MonthlyBudget(
+                      month: DateFormat('yyyy-MM').format(selectedDate),
+                      amount: amount,
+                      profileId: selectedProfile.id!,
+                    ),
+                  );
+                  Navigator.pop(context);
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -186,10 +191,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color:
-                            Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withOpacity(0.9)
-                                : Colors.black87,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.9)
+                            : Colors.black87,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -201,10 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               : const Color(0xFF2E5C88).withOpacity(0.1),
                       child: Icon(
                         _availableIcons[profile?.iconName] ?? Icons.person,
-                        color:
-                            Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF2E5C88)
-                                : const Color(0xFF2E5C88),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF2E5C88)
+                            : const Color(0xFF2E5C88),
                         size: 18,
                       ),
                     ),
@@ -298,20 +301,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  Text(
-                                    '₹${budget.toStringAsFixed(0)}',
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withOpacity(0.2),
-                                          blurRadius: 2,
-                                          offset: const Offset(0, 1),
+                                  Consumer<CurrencyProvider>(
+                                    builder: (context, currencyProvider, _) {
+                                      return Text(
+                                        '${currencyProvider.currencySymbol}${budget.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          shadows: [
+                                            Shadow(
+                                              color:
+                                                  Colors.black.withOpacity(0.2),
+                                              blurRadius: 2,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -376,13 +384,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                             size: 16,
                                           ),
                                           const SizedBox(width: 6),
-                                          Text(
-                                            '₹${income.toStringAsFixed(0)}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                          Consumer<CurrencyProvider>(
+                                            builder:
+                                                (context, currencyProvider, _) {
+                                              return Text(
+                                                '${currencyProvider.currencySymbol}${income.toStringAsFixed(0)}',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              );
+                                            },
                                           ),
                                         ],
                                       ),
@@ -403,39 +416,36 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               child: FractionallySizedBox(
                                 alignment: Alignment.centerLeft,
-                                widthFactor:
-                                    expenses / budget <= 1
-                                        ? expenses / budget
-                                        : 1,
+                                widthFactor: expenses / budget <= 1
+                                    ? expenses / budget
+                                    : 1,
                                 child: Container(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors:
-                                          expenses <= budget
-                                              ? [
-                                                Colors.white.withOpacity(0.95),
-                                                Colors.white.withOpacity(0.7),
-                                              ]
-                                              : [
-                                                Colors.red.shade300,
-                                                Colors.redAccent.shade100,
-                                              ],
+                                      colors: expenses <= budget
+                                          ? [
+                                              Colors.white.withOpacity(0.95),
+                                              Colors.white.withOpacity(0.7),
+                                            ]
+                                          : [
+                                              Colors.red.shade300,
+                                              Colors.redAccent.shade100,
+                                            ],
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                     ),
                                     borderRadius: BorderRadius.circular(5),
-                                    boxShadow:
-                                        expenses <= budget
-                                            ? []
-                                            : [
-                                              BoxShadow(
-                                                color: Colors.red.withOpacity(
-                                                  0.4,
-                                                ),
-                                                blurRadius: 5,
-                                                offset: const Offset(0, 2),
+                                    boxShadow: expenses <= budget
+                                        ? []
+                                        : [
+                                            BoxShadow(
+                                              color: Colors.red.withOpacity(
+                                                0.4,
                                               ),
-                                            ],
+                                              blurRadius: 5,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
                                   ),
                                 ),
                               ),
@@ -456,10 +466,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   'Left: ${(100 - (expenses / budget * 100)).clamp(0, 100).toStringAsFixed(1)}%',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color:
-                                        remaining >= 0
-                                            ? Colors.white.withOpacity(0.85)
-                                            : Colors.red.shade200,
+                                    color: remaining >= 0
+                                        ? Colors.white.withOpacity(0.85)
+                                        : Colors.red.shade200,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -477,28 +486,27 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors:
-                                    Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? [
-                                          const Color(0xFF963D3D),
-                                          const Color(0xFF6E2C2C),
-                                        ]
-                                        : [
-                                          const Color(0xFFE57373),
-                                          const Color(0xFFEF5350),
-                                        ],
+                                colors: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? [
+                                        const Color(0xFF1E3D59),
+                                        const Color(0xFF15294D)
+                                      ]
+                                    : [
+                                        const Color(0xFF2E5C88),
+                                        const Color(0xFF1E3D59)
+                                      ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: (Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? const Color(0xFF963D3D)
-                                          : const Color(0xFFE57373))
-                                      .withOpacity(0.2),
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? const Color(0xFF1E3D59).withOpacity(0.3)
+                                      : const Color(0xFF2E5C88)
+                                          .withOpacity(0.2),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                   spreadRadius: 1,
@@ -511,14 +519,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Row(
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.all(8),
+                                      padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.2),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.arrow_downward,
-                                        color: Colors.white,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.red.shade300
+                                            : Colors.red.shade200,
                                         size: 18,
                                       ),
                                     ),
@@ -528,26 +539,37 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.red.shade300
+                                            : Colors.red.shade200,
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 14),
-                                Text(
-                                  '₹${expenses.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.25),
-                                        blurRadius: 2,
-                                        offset: const Offset(0, 1),
+                                Consumer<CurrencyProvider>(
+                                  builder: (context, currencyProvider, _) {
+                                    return Text(
+                                      '${currencyProvider.currencySymbol}${expenses.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.red.shade300
+                                            : Colors.red.shade200,
+                                        shadows: [
+                                          Shadow(
+                                            color:
+                                                Colors.black.withOpacity(0.25),
+                                            blurRadius: 2,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -559,44 +581,27 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors:
-                                    remaining >= 0
-                                        ? Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? [
-                                              const Color(0xFF2E7D32),
-                                              const Color(0xFF1B5E20),
-                                            ]
-                                            : [
-                                              const Color(0xFF81C784),
-                                              const Color(0xFF66BB6A),
-                                            ]
-                                        : Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? [
-                                          const Color(0xFF963D3D),
-                                          const Color(0xFF6E2C2C),
-                                        ]
-                                        : [
-                                          const Color(0xFFE57373),
-                                          const Color(0xFFEF5350),
-                                        ],
+                                colors: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? [
+                                        const Color(0xFF1E3D59),
+                                        const Color(0xFF15294D)
+                                      ]
+                                    : [
+                                        const Color(0xFF2E5C88),
+                                        const Color(0xFF1E3D59)
+                                      ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: (remaining >= 0
-                                          ? Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? const Color(0xFF2E7D32)
-                                              : const Color(0xFF81C784)
-                                          : Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? const Color(0xFF963D3D)
-                                          : const Color(0xFFE57373))
-                                      .withOpacity(0.2),
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? const Color(0xFF1E3D59).withOpacity(0.3)
+                                      : const Color(0xFF2E5C88)
+                                          .withOpacity(0.2),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                   spreadRadius: 1,
@@ -609,7 +614,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Row(
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.all(8),
+                                      padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.2),
                                         shape: BoxShape.circle,
@@ -618,7 +623,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                         remaining >= 0
                                             ? Icons.account_balance_wallet
                                             : Icons.warning,
-                                        color: Colors.white,
+                                        color: remaining >= 0
+                                            ? Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.green.shade300
+                                                : Colors.green.shade200
+                                            : Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.red.shade300
+                                                : Colors.red.shade200,
                                         size: 18,
                                       ),
                                     ),
@@ -628,26 +641,47 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: remaining >= 0
+                                            ? Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.green.shade300
+                                                : Colors.green.shade200
+                                            : Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.red.shade300
+                                                : Colors.red.shade200,
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 14),
-                                Text(
-                                  '₹${remaining.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.25),
-                                        blurRadius: 2,
-                                        offset: const Offset(0, 1),
+                                Consumer<CurrencyProvider>(
+                                  builder: (context, currencyProvider, _) {
+                                    return Text(
+                                      '${currencyProvider.currencySymbol}${remaining.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: remaining >= 0
+                                            ? Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.green.shade300
+                                                : Colors.green.shade200
+                                            : Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.red.shade300
+                                                : Colors.red.shade200,
+                                        shadows: [
+                                          Shadow(
+                                            color:
+                                                Colors.black.withOpacity(0.25),
+                                            blurRadius: 2,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -659,10 +693,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color:
-                            Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF1A1A1A)
-                                : Colors.white,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF1A1A1A)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -673,10 +706,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                         border: Border.all(
-                          color:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? const Color(0xFF2E5C88).withOpacity(0.2)
-                                  : const Color(0xFF2E5C88).withOpacity(0.1),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF2E5C88).withOpacity(0.2)
+                              : const Color(0xFF2E5C88).withOpacity(0.1),
                           width: 1.5,
                         ),
                       ),
@@ -688,25 +720,23 @@ class _HomeScreenState extends State<HomeScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? const Color(
-                                            0xFF2E5C88,
-                                          ).withOpacity(0.15)
-                                          : const Color(
-                                            0xFF2E5C88,
-                                          ).withOpacity(0.1),
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? const Color(
+                                          0xFF2E5C88,
+                                        ).withOpacity(0.15)
+                                      : const Color(
+                                          0xFF2E5C88,
+                                        ).withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.pie_chart,
                                   size: 22,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? const Color(0xFF81C784)
-                                          : const Color(0xFF2E5C88),
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? const Color(0xFF81C784)
+                                      : const Color(0xFF2E5C88),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -715,11 +745,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.white.withOpacity(0.9)
-                                          : Colors.black87,
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white.withOpacity(0.9)
+                                      : Colors.black87,
                                 ),
                               ),
                               const Spacer(),
@@ -729,15 +758,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? const Color(
-                                            0xFF2E5C88,
-                                          ).withOpacity(0.15)
-                                          : const Color(
-                                            0xFF2E5C88,
-                                          ).withOpacity(0.1),
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? const Color(
+                                          0xFF2E5C88,
+                                        ).withOpacity(0.15)
+                                      : const Color(
+                                          0xFF2E5C88,
+                                        ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
@@ -747,11 +775,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? const Color(0xFF81C784)
-                                            : const Color(0xFF2E5C88),
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? const Color(0xFF81C784)
+                                        : const Color(0xFF2E5C88),
                                   ),
                                 ),
                               ),
@@ -776,10 +803,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: _showAddTransactionDialog,
         tooltip: 'Add Transaction',
         child: const Icon(Icons.add, color: Colors.white),
-        backgroundColor:
-            Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF2E5C88)
-                : const Color(0xFF2E5C88),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2E5C88)
+            : const Color(0xFF2E5C88),
         elevation: 4,
       ),
     );
@@ -789,11 +815,10 @@ class _HomeScreenState extends State<HomeScreen> {
 class EmptyPieChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint =
-        Paint()
-          ..color = Colors.grey[300]!
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 30.0;
+    final Paint paint = Paint()
+      ..color = Colors.grey[300]!
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 30.0;
 
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - paint.strokeWidth / 2;
@@ -802,11 +827,10 @@ class EmptyPieChartPainter extends CustomPainter {
     canvas.drawCircle(center, radius, paint);
 
     // Draw dashed lines to create segments
-    final dashPaint =
-        Paint()
-          ..color = Colors.grey[100]!
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0;
+    final dashPaint = Paint()
+      ..color = Colors.grey[100]!
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
 
     const segments = 6; // Number of segments
     for (var i = 0; i < segments; i++) {

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart' as app_models;
 import '../providers/transaction_provider.dart';
+import '../providers/currency_provider.dart';
 
 class AddTransactionDialog extends StatefulWidget {
   const AddTransactionDialog({super.key});
@@ -80,38 +81,43 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Amount',
-                    prefixText: '₹',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.1),
-                  ),
-                  autofocus: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter an amount';
-                    }
-                    if (double.tryParse(value) == null) {
-                      return 'Please enter a valid number';
-                    }
-                    if (double.parse(value) <= 0) {
-                      return 'Amount must be greater than 0';
-                    }
-                    return null;
+                Consumer<CurrencyProvider>(
+                  builder: (context, currencyProvider, _) {
+                    return TextFormField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Amount',
+                        prefixText: currencyProvider.currencySymbol,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surfaceVariant.withOpacity(0.1),
+                      ),
+                      autofocus: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an amount';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        if (double.parse(value) <= 0) {
+                          return 'Amount must be greater than 0';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
+                    );
                   },
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
@@ -128,20 +134,19 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                     filled: true,
                     fillColor: colorScheme.surfaceVariant.withOpacity(0.1),
                   ),
-                  items:
-                      categories.isEmpty
-                          ? [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('No categories'),
-                            ),
-                          ]
-                          : categories.map((category) {
-                            return DropdownMenuItem(
-                              value: category.id,
-                              child: Text(category.name),
-                            );
-                          }).toList(),
+                  items: categories.isEmpty
+                      ? [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('No categories'),
+                          ),
+                        ]
+                      : categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category.id,
+                            child: Text(category.name),
+                          );
+                        }).toList(),
                   onChanged: (value) {
                     setState(() {
                       _selectedCategoryId = value;
@@ -217,10 +222,9 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                           DateFormat('EEE, MMM d, yyyy').format(_selectedDate),
                           style: TextStyle(
                             fontSize: 16,
-                            color:
-                                theme.brightness == Brightness.dark
-                                    ? Colors.white.withOpacity(0.9)
-                                    : Colors.black87,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.white.withOpacity(0.9)
+                                : Colors.black87,
                           ),
                         ),
                       ],
@@ -244,10 +248,9 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                   amount: amount,
                   type: _type,
                   categoryId: _selectedCategoryId!,
-                  description:
-                      _descriptionController.text.isEmpty
-                          ? null
-                          : _descriptionController.text,
+                  description: _descriptionController.text.isEmpty
+                      ? null
+                      : _descriptionController.text,
                   date: _selectedDate,
                   profileId: selectedProfile!.id!,
                 );

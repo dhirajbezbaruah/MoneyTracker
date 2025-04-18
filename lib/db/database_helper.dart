@@ -111,8 +111,12 @@ class DatabaseHelper {
     batch.insert('categories', {'name': 'Groceries', 'type': 'expense'});
     batch.insert('categories', {'name': 'Transport', 'type': 'expense'});
     batch.insert('categories', {'name': 'Entertainment', 'type': 'expense'});
+    batch.insert('categories', {'name': 'General', 'type': 'expense'});
+    batch.insert('categories', {'name': 'Medical', 'type': 'expense'});
+    batch.insert('categories', {'name': 'Food', 'type': 'expense'});
     batch.insert('categories', {'name': 'Salary', 'type': 'income'});
-    batch.insert('categories', {'name': 'Freelance', 'type': 'income'});
+    batch.insert('categories', {'name': 'Gift', 'type': 'income'});
+    batch.insert('categories', {'name': 'Receivable', 'type': 'income'});
     await batch.commit();
   }
 
@@ -191,89 +195,50 @@ class DatabaseHelper {
     return maps.map((map) => app_models.Category.fromMap(map)).toList();
   }
 
+  Future<app_models.Category?> getCategoryById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'categories',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return app_models.Category.fromMap(maps.first);
+  }
+
   Future<String> exportToCSV(DateTime startDate, DateTime endDate) async {
     try {
-      print('Starting exportToCSV for dates: $startDate to $endDate');
-      late String filePath;
-      final fileName =
-          'transactions_${DateFormat('yyyy_MM_dd').format(startDate)}_to_${DateFormat('yyyy_MM_dd').format(endDate)}.csv';
-
-      if (Platform.isAndroid) {
-        // Use Downloads directory instead of Documents
-        final directory = Directory('/storage/emulated/0/Downloads/MoneyTrack');
-
-        print('Attempting to access directory: ${directory.path}');
-        if (!await directory.exists()) {
-          print('Directory does not exist, creating: ${directory.path}');
-          await directory.create(recursive: true);
-        }
-
-        filePath = '${directory.path}/$fileName';
-      } else if (Platform.isIOS || Platform.isMacOS) {
-        final directory = await getApplicationDocumentsDirectory();
-        final moneyTrackerDir = Directory('${directory.path}/MoneyTracker');
-        if (!await moneyTrackerDir.exists()) {
-          await moneyTrackerDir.create(recursive: true);
-        }
-        filePath = '${moneyTrackerDir.path}/$fileName';
-        print('iOS/macOS: Saving file to: $filePath');
-      } else {
-        final directory = await getApplicationDocumentsDirectory();
-        final moneyTrackerDir = Directory('${directory.path}/MoneyTracker');
-        if (!await moneyTrackerDir.exists()) {
-          await moneyTrackerDir.create(recursive: true);
-        }
-        filePath = '${moneyTrackerDir.path}/$fileName';
-        print('Other platform: Saving file to: $filePath');
-      }
-
-      final file = File(filePath);
-
       final db = await database;
       print('Querying transactions from database...');
-      final transactions = await db.rawQuery(
-        '''
-        SELECT t.*, c.name as category_name 
-        FROM transactions t 
-        LEFT JOIN categories c ON t.category_id = c.id 
-        WHERE t.date BETWEEN ? AND ?
-        ORDER BY t.date DESC
-        ''',
-        [startDate.toIso8601String(), endDate.toIso8601String()],
+      final List<Map<String, dynamic>> maps = await db.query(
+        'transactions',
+        where: "date BETWEEN ? AND ?",
+        whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
       );
 
-      final csvData = StringBuffer();
-      csvData.writeln('Date,Type,Category,Description,Amount');
+      final transactions =
+          maps.map((map) => app_models.Transaction.fromMap(map)).toList();
 
-      String escapeField(String field) {
-        if (field.contains(',') ||
-            field.contains('"') ||
-            field.contains('\n')) {
-          return '"${field.replaceAll('"', '""')}"';
-        }
-        return field;
+      // Create CSV content
+      final StringBuffer csvContent = StringBuffer();
+      csvContent.writeln('Date,Type,Category,Description,Amount');
+
+      for (final transaction in transactions) {
+        final category = (await getCategoryById(transaction.categoryId))!;
+        csvContent.writeln(
+          '${DateFormat('yyyy-MM-dd').format(transaction.date)},'
+          '${transaction.type},'
+          '${category.name},'
+          '${transaction.description ?? ""},'
+          '${transaction.amount}',
+        );
       }
 
-      for (var t in transactions) {
-        final date = DateFormat(
-          'yyyy-MM-dd',
-        ).format(DateTime.parse(t['date'] as String));
-        final type = escapeField(t['type'] as String);
-        final category = escapeField(t['category_name'] as String);
-        // Cast description to String? first, then use null coalescing
-        final description = escapeField((t['description'] as String?) ?? '');
-        final amount = (t['amount'] as num).toStringAsFixed(2);
-
-        csvData.writeln('$date,$type,$category,$description,$amount');
-      }
-
-      print('Writing CSV file to: $filePath');
-      await file.writeAsString(csvData.toString());
-      print('File successfully written to: $filePath');
-      return filePath;
+      return csvContent.toString();
     } catch (e) {
       print('Export error in exportToCSV: $e');
-      throw Exception('Failed to export file: $e');
+      throw Exception('Failed to generate CSV: $e');
     }
   }
 }

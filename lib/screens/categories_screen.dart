@@ -37,105 +37,103 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setDialogState) => Theme(
-                  data: theme.copyWith(
-                    dialogTheme: DialogTheme(
-                      backgroundColor: colorScheme.surface,
-                      surfaceTintColor: colorScheme.surfaceTint,
-                      elevation: 4.0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.0),
-                      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Theme(
+          data: theme.copyWith(
+            dialogTheme: DialogTheme(
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: colorScheme.surfaceTint,
+              elevation: 4.0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+            ),
+          ),
+          child: AlertDialog(
+            title: Text('Add Category'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _categoryController,
+                  decoration: InputDecoration(
+                    labelText: 'Category Name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    filled: true,
+                    fillColor: colorScheme.surfaceVariant.withOpacity(
+                      0.1,
                     ),
                   ),
-                  child: AlertDialog(
-                    title: Text('Add Category'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextFormField(
-                          controller: _categoryController,
-                          decoration: InputDecoration(
-                            labelText: 'Category Name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            filled: true,
-                            fillColor: colorScheme.surfaceVariant.withOpacity(
-                              0.1,
-                            ),
-                          ),
-                          textCapitalization: TextCapitalization.words,
-                          autofocus: true,
-                        ),
-                        const SizedBox(height: 16),
-                        SegmentedButton<String>(
-                          segments: [
-                            ButtonSegment(
-                              value: 'expense',
-                              label: const Text('Expense'),
-                              icon: const Icon(Icons.category),
-                            ),
-                            ButtonSegment(
-                              value: 'income',
-                              label: const Text('Income'),
-                              icon: const Icon(Icons.wallet),
-                            ),
-                          ],
-                          selected: {dialogType},
-                          onSelectionChanged: (Set<String> newSelection) {
-                            setDialogState(() {
-                              dialogType = newSelection.first;
-                            });
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.resolveWith((
-                              states,
-                            ) {
-                              if (states.contains(MaterialState.selected)) {
-                                return mainColor.withOpacity(0.1);
-                              }
-                              return null;
-                            }),
-                          ),
-                        ),
-                      ],
+                  textCapitalization: TextCapitalization.words,
+                  autofocus: true,
+                ),
+                const SizedBox(height: 16),
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(
+                      value: 'expense',
+                      label: const Text('Expense'),
+                      icon: const Icon(Icons.category),
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        onPressed: () {
-                          if (_categoryController.text.isNotEmpty) {
-                            context.read<TransactionProvider>().addCategory(
-                              app_models.Category(
-                                name: _categoryController.text,
-                                type: dialogType,
-                              ),
-                            );
-                            Navigator.pop(context);
-                          }
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: mainColor,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Save'),
-                      ),
-                    ],
+                    ButtonSegment(
+                      value: 'income',
+                      label: const Text('Income'),
+                      icon: const Icon(Icons.wallet),
+                    ),
+                  ],
+                  selected: {dialogType},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setDialogState(() {
+                      dialogType = newSelection.first;
+                    });
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.resolveWith((
+                      states,
+                    ) {
+                      if (states.contains(MaterialState.selected)) {
+                        return mainColor.withOpacity(0.1);
+                      }
+                      return null;
+                    }),
                   ),
                 ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (_categoryController.text.isNotEmpty) {
+                    context.read<TransactionProvider>().addCategory(
+                          app_models.Category(
+                            name: _categoryController.text,
+                            type: dialogType,
+                          ),
+                        );
+                    Navigator.pop(context);
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: mainColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Save'),
+              ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -210,7 +208,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    '${categories.length} ${categories.length == 1 ? 'category' : 'categories'}',
+                    '${categories.length}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -228,16 +226,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color:
-                    Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[800]!.withOpacity(0.3)
-                        : Colors.grey[50],
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[800]!.withOpacity(0.3)
+                    : Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color:
-                      Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : Colors.grey[200]!,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[200]!,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -267,10 +263,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   Text(
                     'No ${type} categories yet',
                     style: TextStyle(
-                      color:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[300]
-                              : Colors.grey[600],
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[300]
+                          : Colors.grey[600],
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -304,52 +299,50 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       if (!canDelete) {
                         showDialog(
                           context: context,
-                          builder:
-                              (context) => AlertDialog(
-                                title: const Text('Cannot Delete Category'),
-                                content: Text(
-                                  'The category "${category.name}" cannot be deleted because '
-                                  'it is being used by one or more transactions.',
+                          builder: (context) => AlertDialog(
+                            title: const Text('Cannot Delete Category'),
+                            content: Text(
+                              'The category "${category.name}" cannot be deleted because '
+                              'it is being used by one or more transactions.',
+                            ),
+                            actions: [
+                              FilledButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: mainColor,
                                 ),
-                                actions: [
-                                  FilledButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: mainColor,
-                                    ),
-                                    child: const Text('OK'),
-                                  ),
-                                ],
+                                child: const Text('OK'),
                               ),
+                            ],
+                          ),
                         );
                         return;
                       }
 
                       showDialog(
                         context: context,
-                        builder:
-                            (context) => AlertDialog(
-                              title: const Text('Delete Category'),
-                              content: Text(
-                                'Are you sure you want to delete "${category.name}"?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                FilledButton(
-                                  onPressed: () {
-                                    provider.deleteCategory(category.id!);
-                                    Navigator.pop(context);
-                                  },
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: mainColor,
-                                  ),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
+                        builder: (context) => AlertDialog(
+                          title: const Text('Delete Category'),
+                          content: Text(
+                            'Are you sure you want to delete "${category.name}"?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
                             ),
+                            FilledButton(
+                              onPressed: () {
+                                provider.deleteCategory(category.id!);
+                                Navigator.pop(context);
+                              },
+                              style: FilledButton.styleFrom(
+                                backgroundColor: mainColor,
+                              ),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
                       );
                     },
                     child: Container(
@@ -359,13 +352,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           colors: [
                             Theme.of(context).brightness == Brightness.dark
                                 ? Theme.of(
-                                  context,
-                                ).colorScheme.surface.withOpacity(0.8)
+                                    context,
+                                  ).colorScheme.surface.withOpacity(0.8)
                                 : Colors.white,
                             Theme.of(context).brightness == Brightness.dark
                                 ? Theme.of(
-                                  context,
-                                ).colorScheme.surface.withOpacity(0.6)
+                                    context,
+                                  ).colorScheme.surface.withOpacity(0.6)
                                 : Colors.grey[50]!,
                           ],
                           begin: Alignment.topCenter,
@@ -386,10 +379,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 8,
+                          vertical: 2, // Reduced from 4 to 2
                         ),
                         leading: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding:
+                              const EdgeInsets.all(5), // Reduced from 6 to 5
                           decoration: BoxDecoration(
                             color: mainColor.withOpacity(0.15),
                             shape: BoxShape.circle,
@@ -397,7 +391,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           child: Icon(
                             type == 'income' ? Icons.wallet : Icons.category,
                             color: mainColor,
-                            size: 22,
+                            size: 18, // Reduced from 20 to 18
                           ),
                         ),
                         title: Text(
@@ -432,26 +426,24 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                               if (!canDelete) {
                                 showDialog(
                                   context: context,
-                                  builder:
-                                      (context) => AlertDialog(
-                                        title: const Text(
-                                          'Cannot Delete Category',
+                                  builder: (context) => AlertDialog(
+                                    title: const Text(
+                                      'Cannot Delete Category',
+                                    ),
+                                    content: Text(
+                                      'The category "${category.name}" cannot be deleted because '
+                                      'it is being used by one or more transactions.',
+                                    ),
+                                    actions: [
+                                      FilledButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: mainColor,
                                         ),
-                                        content: Text(
-                                          'The category "${category.name}" cannot be deleted because '
-                                          'it is being used by one or more transactions.',
-                                        ),
-                                        actions: [
-                                          FilledButton(
-                                            onPressed:
-                                                () => Navigator.pop(context),
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor: mainColor,
-                                            ),
-                                            child: const Text('OK'),
-                                          ),
-                                        ],
+                                        child: const Text('OK'),
                                       ),
+                                    ],
+                                  ),
                                 );
                                 return;
                               }
@@ -459,42 +451,39 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                               if (!mounted) return;
                               showDialog(
                                 context: context,
-                                builder:
-                                    (context) => AlertDialog(
-                                      title: const Text('Delete Category'),
-                                      content: Text(
-                                        'Are you sure you want to delete "${category.name}"?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.pop(context),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        FilledButton(
-                                          onPressed: () {
-                                            provider.deleteCategory(
-                                              category.id!,
-                                            );
-                                            Navigator.pop(context);
-                                          },
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: mainColor,
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete Category'),
+                                  content: Text(
+                                    'Are you sure you want to delete "${category.name}"?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancel'),
                                     ),
+                                    FilledButton(
+                                      onPressed: () {
+                                        provider.deleteCategory(
+                                          category.id!,
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: mainColor,
+                                      ),
+                                      child: const Text('Delete'),
+                                    ),
+                                  ],
+                                ),
                               );
                             },
                             customBorder: const CircleBorder(),
                             child: Icon(
                               Icons.delete_outline,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? deleteColor
-                                      : deleteColor,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? deleteColor
+                                  : deleteColor,
                               size: 20,
                             ),
                           ),
@@ -512,10 +501,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             height: 40,
             indent: 32,
             endIndent: 32,
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.05),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
           ),
       ],
     );
@@ -598,10 +586,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             Text('Category', style: TextStyle(color: Colors.white)),
           ],
         ),
-        backgroundColor:
-            Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF2E5C88)
-                : const Color(0xFF2E5C88),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2E5C88)
+            : const Color(0xFF2E5C88),
         elevation: 4,
       ),
     );
