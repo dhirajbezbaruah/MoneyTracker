@@ -1,26 +1,32 @@
 import 'package:flutter/material.dart';
-//import 'package:shared_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CurrencyProvider with ChangeNotifier {
-  static const String _currencyKey = 'currency_symbol';
+  static const String _currencyCodeKey = 'currency_code';
+  static const String _currencySymbolKey = 'currency_symbol';
+
+  String _currencyCode = 'INR';
   String _currencySymbol = '₹';
 
   CurrencyProvider() {
-    _loadCurrencySymbol();
+    _loadCurrency();
   }
 
+  String get currencyCode => _currencyCode;
   String get currencySymbol => _currencySymbol;
 
-  Future<void> _loadCurrencySymbol() async {
+  Future<void> _loadCurrency() async {
     final prefs = await SharedPreferences.getInstance();
-    _currencySymbol = prefs.getString(_currencyKey) ?? '₹';
+    _currencyCode = prefs.getString(_currencyCodeKey) ?? 'INR';
+    _currencySymbol = prefs.getString(_currencySymbolKey) ?? '₹';
     notifyListeners();
   }
 
-  Future<void> setCurrencySymbol(String symbol) async {
+  Future<void> setCurrency(String code, String symbol) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_currencyKey, symbol);
+    await prefs.setString(_currencyCodeKey, code);
+    await prefs.setString(_currencySymbolKey, symbol);
+    _currencyCode = code;
     _currencySymbol = symbol;
     notifyListeners();
   }

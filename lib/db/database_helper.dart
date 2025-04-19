@@ -2,8 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/transaction.dart' as app_models;
 import '../models/category.dart' as app_models;
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:intl/intl.dart';
 
 class DatabaseHelper {
@@ -24,7 +22,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3, // Increased version number
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -37,7 +35,8 @@ class DatabaseHelper {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           is_selected INTEGER NOT NULL DEFAULT 0,
-          icon_name TEXT
+          icon_name TEXT,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
       ''');
 
@@ -45,6 +44,7 @@ class DatabaseHelper {
         'name': 'Profile 1',
         'is_selected': 1,
         'icon_name': 'person',
+        'created_at': DateTime.now().toIso8601String(),
       });
 
       await db.execute(
@@ -55,6 +55,20 @@ class DatabaseHelper {
       );
       await db.execute('UPDATE transactions SET profile_id = 1');
       await db.execute('UPDATE monthly_budgets SET profile_id = 1');
+    }
+
+    if (oldVersion < 3) {
+      // Add created_at column to profiles if it doesn't exist
+      final tableInfo = await db.rawQuery('PRAGMA table_info(profiles)');
+      final hasCreatedAt =
+          tableInfo.any((column) => column['name'] == 'created_at');
+
+      if (!hasCreatedAt) {
+        await db.execute(
+            'ALTER TABLE profiles ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
+        // Update existing profiles with current timestamp
+        await db.execute("UPDATE profiles SET created_at = datetime('now')");
+      }
     }
   }
 
@@ -69,11 +83,17 @@ class DatabaseHelper {
         id $idType,
         name $textType,
         is_selected $integerType DEFAULT 0,
-        icon_name TEXT
+        icon_name TEXT,
+        created_at $textType DEFAULT CURRENT_TIMESTAMP
       )
     ''');
 
-    await db.insert('profiles', {'name': 'Profile 1', 'is_selected': 1});
+    await db.insert('profiles', {
+      'name': 'Profile 1',
+      'is_selected': 1,
+      'icon_name': 'person',
+      'created_at': DateTime.now().toIso8601String(),
+    });
 
     await db.execute('''
       CREATE TABLE categories (

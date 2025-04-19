@@ -222,12 +222,23 @@ class _CurrencySettingsScreenState extends State<CurrencySettingsScreen> {
                     ? const Icon(Icons.check_circle, color: Colors.green)
                     : null,
                 onTap: () {
-                  provider.setCurrencySymbol(currency['symbol']!);
+                  final code = RegExp(r'\(([^)]+)\)')
+                          .firstMatch(currency['name']!)
+                          ?.group(1) ??
+                      '';
+                  provider.setCurrency(code, currency['symbol']!);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content: Text('Currency set to ${currency['name']}'),
-                        duration: const Duration(seconds: 1)),
+                      content: Text('Currency set to ${currency['name']}'),
+                      duration: const Duration(seconds: 1),
+                    ),
                   );
+
+                  // Return selected currency to the calling screen
+                  Navigator.pop(context, {
+                    'code': code,
+                    'symbol': currency['symbol']!,
+                  });
                 },
               );
             },

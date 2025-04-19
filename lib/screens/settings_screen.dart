@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
-import 'profile_screen.dart';
+import 'profile_list_screen.dart';
 import 'appearance_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -115,7 +115,7 @@ class SettingsScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ProfileScreen(),
+                          builder: (context) => const ProfileListScreen(),
                         ),
                       );
                     },

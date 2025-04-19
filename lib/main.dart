@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:money_tracker/providers/currency_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'screens/transactions_screen.dart';
 import 'screens/categories_screen.dart';
 import 'screens/settings_screen.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/theme_provider.dart';
+import 'widgets/onboarding_dialog.dart';
 
 void main() {
   runApp(
@@ -82,7 +84,21 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
+
+      if (isFirstLaunch) {
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const OnboardingDialog(),
+        );
+        await prefs.setBool('is_first_launch', false);
+      }
+
+      if (!mounted) return;
       context.read<TransactionProvider>().loadProfiles();
     });
   }
@@ -93,10 +109,9 @@ class _MainScreenState extends State<MainScreen> {
       body: _screens[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color:
-              Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF0A1929)
-                  : Colors.white,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF0A1929)
+              : Colors.white,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -125,12 +140,11 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildNavItem(int index, IconData icon, IconData selectedIcon) {
     final isSelected = _selectedIndex == index;
-    final color =
-        isSelected
-            ? Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF2E5C88)
-                : const Color(0xFF1E3D59)
-            : Theme.of(context).brightness == Brightness.dark
+    final color = isSelected
+        ? Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2E5C88)
+            : const Color(0xFF1E3D59)
+        : Theme.of(context).brightness == Brightness.dark
             ? Colors.white70
             : const Color(0xFF6B7F99);
 
@@ -143,26 +157,24 @@ class _MainScreenState extends State<MainScreen> {
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration:
-            isSelected
-                ? BoxDecoration(
-                  gradient: LinearGradient(
-                    colors:
-                        Theme.of(context).brightness == Brightness.dark
-                            ? [
-                              const Color(0xFF2E5C88).withOpacity(0.2),
-                              const Color(0xFF15294D).withOpacity(0.15),
-                            ]
-                            : [
-                              const Color(0xFF2E5C88).withOpacity(0.15),
-                              const Color(0xFF1E3D59).withOpacity(0.1),
-                            ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                )
-                : null,
+        decoration: isSelected
+            ? BoxDecoration(
+                gradient: LinearGradient(
+                  colors: Theme.of(context).brightness == Brightness.dark
+                      ? [
+                          const Color(0xFF2E5C88).withOpacity(0.2),
+                          const Color(0xFF15294D).withOpacity(0.15),
+                        ]
+                      : [
+                          const Color(0xFF2E5C88).withOpacity(0.15),
+                          const Color(0xFF1E3D59).withOpacity(0.1),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              )
+            : null,
         child: Icon(isSelected ? selectedIcon : icon, color: color),
       ),
     );

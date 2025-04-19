@@ -24,19 +24,27 @@ class TransactionProvider with ChangeNotifier {
   Profile? get selectedProfile => _selectedProfile;
 
   Future<void> loadProfiles() async {
-    print('DEBUG: loadProfiles called');
     final db = await DatabaseHelper.instance.database;
     final List<Map<String, dynamic>> maps = await db.query('profiles');
-    print('DEBUG: profiles from db: ' + maps.toString());
 
     _profiles.clear();
     if (maps.isEmpty) {
       // Create default profile if no profiles exist
+      final now = DateTime.now();
       final id = await db.insert('profiles', {
         'name': 'Profile 1',
         'is_selected': 1,
+        'icon_name': 'person',
+        'created_at': now.toIso8601String(),
       });
-      _profiles.add(Profile(id: id, name: 'Profile 1', isSelected: true));
+
+      _profiles.add(Profile(
+        id: id,
+        name: 'Profile 1',
+        iconName: 'person',
+        createdAt: now,
+        isSelected: true,
+      ));
       _selectedProfile = _profiles.first;
     } else {
       _profiles.addAll(maps.map((map) => Profile.fromMap(map)));
@@ -67,12 +75,22 @@ class TransactionProvider with ChangeNotifier {
     }
 
     final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+
     final id = await db.insert('profiles', {
       'name': name,
       'is_selected': 0,
       'icon_name': iconName ?? 'person',
+      'created_at': now.toIso8601String(),
     });
-    _profiles.add(Profile(id: id, name: name, iconName: iconName ?? 'person'));
+
+    _profiles.add(Profile(
+      id: id,
+      name: name,
+      iconName: iconName ?? 'person',
+      createdAt: now,
+      isSelected: false,
+    ));
     notifyListeners();
   }
 
@@ -400,5 +418,50 @@ class TransactionProvider with ChangeNotifier {
       }
       notifyListeners();
     }
+  }
+
+  Future<void> createProfile(Profile profile) async {
+    if (_profiles.length >= 5) {
+      throw Exception('Maximum 5 profiles allowed');
+    }
+
+    final db = await DatabaseHelper.instance.database;
+
+    // Use the profile's isSelected value or make it selected if it's the first profile
+    final shouldSelect = profile.isSelected || _profiles.isEmpty;
+
+    // First unselect all existing profiles if this one will be selected
+    if (shouldSelect) {
+      await db.update('profiles', {'is_selected': 0});
+    }
+
+    final id = await db.insert('profiles', {
+      'name': profile.name,
+      'icon_name': profile.iconName,
+      'created_at': profile.createdAt.toIso8601String(),
+      'is_selected': shouldSelect ? 1 : 0,
+    });
+
+    final newProfile = Profile(
+      id: id,
+      name: profile.name,
+      iconName: profile.iconName,
+      createdAt: profile.createdAt,
+      isSelected: shouldSelect,
+    );
+
+    // Update any previously selected profile in memory
+    if (shouldSelect) {
+      for (var i = 0; i < _profiles.length; i++) {
+        _profiles[i] = _profiles[i].copyWith(isSelected: false);
+      }
+    }
+
+    _profiles.add(newProfile);
+    if (shouldSelect) {
+      _selectedProfile = newProfile;
+    }
+
+    notifyListeners();
   }
 }
