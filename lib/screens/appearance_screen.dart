@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import 'package:money_tracker/widgets/banner_ad_widget.dart';
 
 class AppearanceScreen extends StatelessWidget {
   const AppearanceScreen({super.key});
@@ -105,6 +106,7 @@ class AppearanceScreen extends StatelessWidget {
                 onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
               ),
               const SizedBox(height: 24),
+              const BannerAdWidget(),
             ],
           );
         },

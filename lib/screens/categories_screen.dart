@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/category.dart' as app_models;
 import '../providers/transaction_provider.dart';
+import 'package:money_tracker/widgets/banner_ad_widget.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -522,57 +523,78 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               categories.where((c) => c.type == 'expense').toList();
 
           if (categories.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.1),
-                        shape: BoxShape.circle,
+            return Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.category_outlined,
+                              size: 64,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'No categories yet',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add categories to organize your transactions',
+                            style: Theme.of(
+                              context,
+                            )
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: Colors.grey[600]),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton.icon(
+                            onPressed: _showAddCategoryDialog,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Category'),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        Icons.category_outlined,
-                        size: 64,
-                        color: Theme.of(context).primaryColor,
-                      ),
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'No categories yet',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Add categories to organize your transactions',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _showAddCategoryDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Category'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                // Add the banner ad at the bottom
+                const BannerAdWidget(),
+              ],
             );
           }
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCategorySection('expense', expenseCategories),
-                _buildCategorySection('income', incomeCategories),
-              ],
-            ),
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildCategorySection('expense', expenseCategories),
+                      _buildCategorySection('income', incomeCategories),
+                    ],
+                  ),
+                ),
+              ),
+              // Add the banner ad at the bottom
+              const BannerAdWidget(),
+            ],
           );
         },
       ),

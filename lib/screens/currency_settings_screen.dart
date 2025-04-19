@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/currency_provider.dart';
+import 'package:money_tracker/widgets/banner_ad_widget.dart';
 
 class CurrencySettingsScreen extends StatefulWidget {
   const CurrencySettingsScreen({super.key});

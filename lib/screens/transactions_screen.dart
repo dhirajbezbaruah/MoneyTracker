@@ -7,6 +7,7 @@ import '../providers/transaction_provider.dart';
 import '../providers/currency_provider.dart';
 import '../widgets/export_dialog.dart';
 import '../widgets/add_transaction_dialog.dart';
+import 'package:money_tracker/widgets/banner_ad_widget.dart';
 
 const expenseColorDark = Color(0xFFE57373);
 const expenseColorLight = Color(0xFFEF5350);
@@ -628,6 +629,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   },
                 ),
               ),
+              const BannerAdWidget(),
             ],
           );
         },

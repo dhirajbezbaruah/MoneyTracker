@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
 import '../models/profile.dart';
+import 'package:money_tracker/widgets/banner_ad_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Profile? profile;

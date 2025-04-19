@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:money_tracker/providers/currency_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'screens/home_screen.dart';
 import 'screens/transactions_screen.dart';
 import 'screens/categories_screen.dart';
@@ -9,8 +10,28 @@ import 'screens/settings_screen.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/theme_provider.dart';
 import 'widgets/onboarding_dialog.dart';
+import 'services/app_open_ad_manager.dart';
+import 'services/app_lifecycle_reactor.dart';
 
-void main() {
+late AppOpenAdManager appOpenAdManager;
+late AppLifecycleReactor appLifecycleReactor;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize MobileAds
+  await MobileAds.instance.initialize();
+
+  // Initialize AppOpenAd manager
+  appOpenAdManager = AppOpenAdManager();
+  appOpenAdManager.loadAd();
+
+  // Setup lifecycle reactor
+  appLifecycleReactor = AppLifecycleReactor(
+    appOpenAdManager: appOpenAdManager,
+  );
+  appLifecycleReactor.listenToAppStateChanges();
+
   runApp(
     MultiProvider(
       providers: [
@@ -18,7 +39,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(
           create: (_) => CurrencyProvider(),
-        ), // Add this line
+        ),
       ],
       child: const MyApp(),
     ),

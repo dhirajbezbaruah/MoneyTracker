@@ -40,6 +40,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Add this line for AdMob
+        manifestPlaceholders["AdMobAppId"] = "ca-app-pub-1380680048513180/9680715758" // Replace with your AdMob app ID
     }
 
     buildTypes {

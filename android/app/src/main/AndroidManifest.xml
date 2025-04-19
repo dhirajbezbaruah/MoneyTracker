@@ -49,5 +49,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Add this meta-data tag for AdMob -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1380680048513180~2033621027"/>
     </application>
 </manifest>

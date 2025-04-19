@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
 import 'profile_list_screen.dart';
 import 'appearance_screen.dart';
+import 'package:money_tracker/widgets/banner_ad_widget.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -42,175 +43,191 @@ class SettingsScreen extends StatelessWidget {
         builder: (context, provider, child) {
           final selectedProfile = provider.selectedProfile;
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: Theme.of(context).brightness == Brightness.dark
-                          ? [
-                              const Color(0xFF2E5C88),
-                              const Color(0xFF15294D),
-                            ]
-                          : [
-                              const Color(0xFF2E5C88),
-                              const Color(0xFF1E3D59),
-                            ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF2E5C88).withOpacity(0.3)
-                            : const Color(0xFF2E5C88).withOpacity(0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? [
+                                        const Color(0xFF2E5C88),
+                                        const Color(0xFF15294D),
+                                      ]
+                                    : [
+                                        const Color(0xFF2E5C88),
+                                        const Color(0xFF1E3D59),
+                                      ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? const Color(0xFF2E5C88).withOpacity(0.3)
+                                  : const Color(0xFF2E5C88).withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical:
+                                4, // Reduced from 12 to 4 to match other rows
+                          ),
+                          visualDensity: VisualDensity(
+                              vertical:
+                                  -4), // Added negative visual density for consistency
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.white.withOpacity(0.25),
+                            child: Icon(Icons.person, color: Colors.white),
+                          ),
+                          title: Text(
+                            'Profile',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          subtitle: Text(
+                            selectedProfile?.name ?? 'Profile 1',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          trailing: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child:
+                                Icon(Icons.chevron_right, color: Colors.white),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ProfileListScreen(),
+                              ),
+                            );
+                          },
+                        ),
                       ),
+                      const SizedBox(
+                          height: 12), // Consistent spacing between sections
+                      _buildSettingsCard(
+                        context,
+                        title: 'Currency',
+                        subtitle: 'Change your preferred currency',
+                        iconData: Icons.currency_exchange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const CurrencySettingsScreen(),
+                            ),
+                          );
+                        },
+                        showTrailing: true,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSettingsCard(
+                        context,
+                        title: 'Appearance',
+                        subtitle: 'Theme, colors and display options',
+                        iconData: Icons.palette_outlined,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AppearanceScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildSettingsCard(
+                        context,
+                        title: 'Share App',
+                        subtitle: 'Tell your friends about Money Tracker',
+                        iconData: Icons.share_outlined,
+                        onTap: _shareApp,
+                      ),
+                      _buildSettingsCard(
+                        context,
+                        title: 'Rate Us',
+                        subtitle: 'Love the app? Give us 5 stars!',
+                        iconData: Icons.star_outline,
+                        onTap: () => _rateApp(context),
+                      ),
+                      _buildSettingsCard(
+                        context,
+                        title: 'About',
+                        subtitle: 'Version 1.0.0',
+                        iconData: Icons.info_outline,
+                        onTap: () {
+                          showAboutDialog(
+                            context: context,
+                            applicationName: 'Money Tracker',
+                            applicationVersion: '1.0.0',
+                            applicationIcon: Icon(
+                              Icons.account_balance_wallet,
+                              size: 48,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? const Color(0xFF2E5C88)
+                                  : const Color(0xFF2E5C88),
+                            ),
+                            children: [
+                              const Text(
+                                'A simple and intuitive app to track your personal finances, '
+                                'manage expenses, and stay within your budget.',
+                              ),
+                            ],
+                          );
+                        },
+                        showTrailing: true,
+                      ),
+                      _buildSettingsCard(
+                        context,
+                        title: 'Privacy',
+                        subtitle: 'Privacy policy and terms',
+                        iconData: Icons.privacy_tip_outlined,
+                        onTap: () async {
+                          const privacyUrl =
+                              'https://fincalculators.com/privacy';
+                          final Uri url = Uri.parse(privacyUrl);
+                          if (!await launchUrl(url)) {
+                            throw Exception('Could not launch \$url');
+                          }
+                        },
+                        showTrailing: true,
+                      ),
+                      const SizedBox(
+                          height: 16), // A bit of padding at the bottom
                     ],
                   ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 4, // Reduced from 12 to 4 to match other rows
-                    ),
-                    visualDensity: VisualDensity(
-                        vertical:
-                            -4), // Added negative visual density for consistency
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.white.withOpacity(0.25),
-                      child: Icon(Icons.person, color: Colors.white),
-                    ),
-                    title: Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    subtitle: Text(
-                      selectedProfile?.name ?? 'Profile 1',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.chevron_right, color: Colors.white),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ProfileListScreen(),
-                        ),
-                      );
-                    },
-                  ),
                 ),
-                const SizedBox(
-                    height: 12), // Consistent spacing between sections
-                _buildSettingsCard(
-                  context,
-                  title: 'Currency',
-                  subtitle: 'Change your preferred currency',
-                  iconData: Icons.currency_exchange,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CurrencySettingsScreen(),
-                      ),
-                    );
-                  },
-                  showTrailing: true,
-                ),
-                const SizedBox(height: 16),
-                _buildSettingsCard(
-                  context,
-                  title: 'Appearance',
-                  subtitle: 'Theme, colors and display options',
-                  iconData: Icons.palette_outlined,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AppearanceScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSettingsCard(
-                  context,
-                  title: 'Share App',
-                  subtitle: 'Tell your friends about Money Tracker',
-                  iconData: Icons.share_outlined,
-                  onTap: _shareApp,
-                ),
-                _buildSettingsCard(
-                  context,
-                  title: 'Rate Us',
-                  subtitle: 'Love the app? Give us 5 stars!',
-                  iconData: Icons.star_outline,
-                  onTap: () => _rateApp(context),
-                ),
-                _buildSettingsCard(
-                  context,
-                  title: 'About',
-                  subtitle: 'Version 1.0.0',
-                  iconData: Icons.info_outline,
-                  onTap: () {
-                    showAboutDialog(
-                      context: context,
-                      applicationName: 'Money Tracker',
-                      applicationVersion: '1.0.0',
-                      applicationIcon: Icon(
-                        Icons.account_balance_wallet,
-                        size: 48,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF2E5C88)
-                            : const Color(0xFF2E5C88),
-                      ),
-                      children: [
-                        const Text(
-                          'A simple and intuitive app to track your personal finances, '
-                          'manage expenses, and stay within your budget.',
-                        ),
-                      ],
-                    );
-                  },
-                  showTrailing: true,
-                ),
-                _buildSettingsCard(
-                  context,
-                  title: 'Privacy',
-                  subtitle: 'Privacy policy and terms',
-                  iconData: Icons.privacy_tip_outlined,
-                  onTap: () async {
-                    const privacyUrl = 'https://fincalculators.com/privacy';
-                    final Uri url = Uri.parse(privacyUrl);
-                    if (!await launchUrl(url)) {
-                      throw Exception('Could not launch \$url');
-                    }
-                  },
-                  showTrailing: true,
-                ),
-                const SizedBox(height: 60), // Space for ads
-              ],
-            ),
+              ),
+              // Add banner ad at the bottom
+              const BannerAdWidget(),
+            ],
           );
         },
       ),
