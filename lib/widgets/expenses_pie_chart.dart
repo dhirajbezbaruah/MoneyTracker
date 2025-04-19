@@ -123,7 +123,7 @@ class _ExpensesPieChartState extends State<ExpensesPieChart> {
                     builder: (context, currencyProvider, _) {
                       return Text(
                         widget.expenses.isEmpty
-                            ? 'No Expenses'
+                            ? '0'
                             : '${currencyProvider.currencySymbol}${widget.totalExpenses.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 20,

@@ -493,10 +493,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         const Color(0xFF15294D)
                                       ]
                                     : [
-                                        //const Color(0xFF2E5C88),
-                                        //const Color(0xFF1E3D59)
-                                        Colors.blue.shade300,
-                                        Colors.blue.shade200,
+                                        const Color(0xFF2E5C88),
+                                        const Color(0xFF1E3D59)
                                       ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -772,8 +770,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: Text(
                                   expensesByCategory.isEmpty
-                                      ? 'No expenses'
-                                      : '${expensesByCategory.length} categories',
+                                      ? '0'
+                                      : '${expensesByCategory.length}',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,

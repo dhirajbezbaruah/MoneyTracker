@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-//import 'package:shared_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider with ChangeNotifier {
   static const String _themeKey = 'theme_mode';
-  late ThemeMode _themeMode;
+
+  // Initialize with a default value instead of using late
+  ThemeMode _themeMode = ThemeMode.system;
 
   ThemeProvider() {
     _loadThemeMode();
