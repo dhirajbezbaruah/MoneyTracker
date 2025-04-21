@@ -1,4 +1,6 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.fincalculators.moneytrack">
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Package visibility needed for picking images from storage in Android 11+ -->
     <queries>
@@ -10,7 +12,9 @@
     <application
         android:label="Money Track"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -44,6 +48,12 @@
                 android:resource="@xml/provider_paths" />
         </provider>
         
+        <!-- Add this tools:replace attribute -->
+        <property
+            tools:replace="android:resource"
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/ga_ad_services_config" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

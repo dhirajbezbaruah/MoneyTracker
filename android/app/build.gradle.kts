@@ -5,6 +5,7 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") // Added Google Services plugin
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -17,12 +18,17 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_11 // Update to Java 11
+        targetCompatibility = JavaVersion.VERSION_11 // Update to Java 11
+        isCoreLibraryDesugaringEnabled = true // Enable desugaring
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "11" // Update to Java 11
+    }
+
+    lintOptions {
+        disable("ObsoleteLintCustomCheck") // Suppress warnings about obsolete options
     }
 
     signingConfigs {
@@ -59,4 +65,8 @@ flutter {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.10.1")
+    implementation("com.google.firebase:firebase-analytics-ktx:21.4.0") // Firebase Analytics dependency
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3") // Add this line
 }
+
+apply(plugin = "com.google.gms.google-services") // Apply Google Services plugin

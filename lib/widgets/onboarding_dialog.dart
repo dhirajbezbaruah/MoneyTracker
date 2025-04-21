@@ -19,6 +19,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
   String _selectedCurrencySymbol = '₹';
   String _selectedIcon = 'person';
   ThemeMode _selectedThemeMode = ThemeMode.system;
+  String? _nameError; // Add error state
 
   // Keep the same icons as in profile settings
   final _icons = {
@@ -101,7 +102,8 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: 360,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
+            maxHeight:
+                MediaQuery.of(context).size.height * 0.7, // Reduced from 0.8
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -109,14 +111,14 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
               _buildHeader(),
               Flexible(
                 child: ListView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12), // Reduced vertical padding
                   shrinkWrap: true,
                   children: [
                     _buildThemeSection(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16), // Reduced from 20
                     _buildProfileSection(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16), // Reduced from 20
                     _buildCurrencySection(),
                   ],
                 ),
@@ -131,8 +133,9 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
 
   Widget _buildHeader() {
     return Container(
-      width: double.infinity, // Make sure it fills the entire width
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+          horizontal: 20, vertical: 12), // Reduced from 16
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF2E5C88), Color(0xFF1E3D59)],
@@ -157,7 +160,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
           ),
           const SizedBox(height: 2),
           const Text(
-            'Set up your profile and preferences',
+            'Set up your profile and preferences. you can update them later in settings.',
             style: TextStyle(
               color: Colors.white70,
               fontSize: 13,
@@ -179,7 +182,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6), // Reduced from 8
         Card(
           margin: EdgeInsets.zero,
           elevation: 0.5,
@@ -196,7 +199,8 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
             onTap: _showThemeSelector,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10), // Reduced from 12
               child: Row(
                 children: [
                   Container(
@@ -305,6 +309,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   : null,
               onTap: () {
                 setState(() => _selectedThemeMode = ThemeMode.system);
+                context.read<ThemeProvider>().setThemeMode(ThemeMode.system);
                 Navigator.pop(context);
               },
             ),
@@ -323,6 +328,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   : null,
               onTap: () {
                 setState(() => _selectedThemeMode = ThemeMode.light);
+                context.read<ThemeProvider>().setThemeMode(ThemeMode.light);
                 Navigator.pop(context);
               },
             ),
@@ -341,6 +347,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                   : null,
               onTap: () {
                 setState(() => _selectedThemeMode = ThemeMode.dark);
+                context.read<ThemeProvider>().setThemeMode(ThemeMode.dark);
                 Navigator.pop(context);
               },
             ),
@@ -362,7 +369,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6), // Reduced from 8
         Card(
           margin: EdgeInsets.zero,
           elevation: 0.5,
@@ -378,30 +385,45 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
           child: Column(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                child: TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Profile Name',
-                    hintText: 'Enter your name or nickname',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8, // Reduced from 12
+                  horizontal: 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _nameController,
+                      onChanged: (_) => setState(
+                          () => _nameError = null), // Clear error on change
+                      decoration: InputDecoration(
+                        labelText: 'Profile Name',
+                        hintText: 'Enter your name or nickname',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8, // Reduced from 12
+                        ),
+                        isDense: true,
+                        counterText: '', // Hide character counter
+                        errorText: _nameError,
+                      ),
+                      style: const TextStyle(fontSize: 14), // Reduced font size
+                      maxLength: 10,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    isDense:
-                        true, // Reduces the internal height of the input field
-                  ),
-                  maxLength: 10,
+                  ],
                 ),
               ),
               const Divider(height: 1),
               InkWell(
                 onTap: _showIconSelector,
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8, // Reduced from 12
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -804,11 +826,9 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
   void _onGetStarted() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a profile name'),
-        ),
-      );
+      setState(() {
+        _nameError = 'Please enter a profile name';
+      });
       return;
     }
 

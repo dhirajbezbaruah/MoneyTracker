@@ -8,6 +8,7 @@ import '../providers/currency_provider.dart';
 import '../widgets/export_dialog.dart';
 import '../widgets/add_transaction_dialog.dart';
 import 'package:money_tracker/widgets/banner_ad_widget.dart';
+import 'package:money_tracker/services/analytics_service.dart';
 
 const expenseColorDark = Color(0xFFE57373);
 const expenseColorLight = Color(0xFFEF5350);
@@ -26,6 +27,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService.logEvent(
+        'transactions_screen_viewed'); // Track screen view
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });

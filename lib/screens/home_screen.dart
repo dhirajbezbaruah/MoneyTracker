@@ -8,6 +8,7 @@ import '../models/monthly_budget.dart';
 import '../widgets/expenses_pie_chart.dart';
 import '../widgets/add_transaction_dialog.dart';
 import 'package:money_tracker/widgets/banner_ad_widget.dart';
+import 'package:money_tracker/services/analytics_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService.logEvent('home_screen_viewed'); // Track screen view
     selectedDate = DateTime.now();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<TransactionProvider>();

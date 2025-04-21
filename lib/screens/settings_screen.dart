@@ -7,6 +7,8 @@ import '../providers/transaction_provider.dart';
 import 'profile_list_screen.dart';
 import 'appearance_screen.dart';
 import 'package:money_tracker/widgets/banner_ad_widget.dart';
+import 'package:money_tracker/services/analytics_service.dart';
+import '../utils/version_util.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -37,6 +39,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AnalyticsService.logEvent('settings_screen_viewed'); // Track screen view
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), elevation: 0),
       body: Consumer<TransactionProvider>(
@@ -179,25 +182,35 @@ class SettingsScreen extends StatelessWidget {
                       _buildSettingsCard(
                         context,
                         title: 'About',
-                        subtitle: 'Version 1.0.0',
+                        subtitle: 'Version ${VersionUtil.version}',
                         iconData: Icons.info_outline,
                         onTap: () {
                           showAboutDialog(
                             context: context,
                             applicationName: 'Money Tracker',
-                            applicationVersion: '1.0.0',
-                            applicationIcon: Icon(
-                              Icons.account_balance_wallet,
-                              size: 48,
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? const Color(0xFF2E5C88)
-                                  : const Color(0xFF2E5C88),
-                            ),
+                            applicationVersion: VersionUtil.fullVersion,
                             children: [
                               const Text(
                                 'A simple and intuitive app to track your personal finances, '
                                 'manage expenses, and stay within your budget.',
+                              ),
+                              const SizedBox(height: 16),
+                              InkWell(
+                                onTap: () async {
+                                  const privacyUrl =
+                                      'https://fincalculators.com/privacy';
+                                  final Uri url = Uri.parse(privacyUrl);
+                                  if (!await launchUrl(url)) {
+                                    throw Exception('Could not launch \$url');
+                                  }
+                                },
+                                child: const Text(
+                                  'Privacy Policy',
+                                  style: TextStyle(
+                                    color: Color(0xFF2E5C88),
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
                               ),
                             ],
                           );
@@ -206,13 +219,13 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       _buildSettingsCard(
                         context,
-                        title: 'Privacy',
-                        subtitle: 'Privacy policy and terms',
-                        iconData: Icons.privacy_tip_outlined,
+                        title: 'Try FinCalculators',
+                        subtitle: 'All financial calculators in one app',
+                        iconData: Icons.calculate_outlined,
                         onTap: () async {
-                          const privacyUrl =
-                              'https://fincalculators.com/privacy';
-                          final Uri url = Uri.parse(privacyUrl);
+                          const appUrl =
+                              'https://play.google.com/store/apps/details?id=com.fincalculators.android';
+                          final Uri url = Uri.parse(appUrl);
                           if (!await launchUrl(url)) {
                             throw Exception('Could not launch \$url');
                           }
