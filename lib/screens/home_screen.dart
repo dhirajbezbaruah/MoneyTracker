@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:money_tracker/main.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/currency_provider.dart';
 import '../models/monthly_budget.dart';
@@ -9,6 +11,11 @@ import '../widgets/expenses_pie_chart.dart';
 import '../widgets/add_transaction_dialog.dart';
 import 'package:money_tracker/widgets/banner_ad_widget.dart';
 import 'package:money_tracker/services/analytics_service.dart';
+import '../services/app_rating_service.dart';
+import '../services/deep_link_service.dart';
+
+// Import the global instance from main.dart
+import '../main.dart' show appRatingService;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,12 +54,18 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     AnalyticsService.logEvent('home_screen_viewed'); // Track screen view
     selectedDate = DateTime.now();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<TransactionProvider>();
       final currentMonth = DateFormat('yyyy-MM').format(selectedDate);
       provider.loadCurrentBudget(currentMonth);
       provider.loadTransactions(currentMonth);
       provider.loadCategories();
+
+      // Show rating prompt after a delay
+      await Future.delayed(const Duration(seconds: 5));
+      if (mounted) {
+        await appRatingService.showRatingDialog(context);
+      }
     });
   }
 
@@ -140,6 +153,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _shareApp() {
+    // Share the app using our DeepLinkService
+    final deepLinkService = DeepLinkService();
+    deepLinkService.shareApp();
+
+    // Track this event for analytics
+    AnalyticsService.logAppShare();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,6 +206,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const Spacer(),
+            // Add Share App button
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: () {
+                // Track share event for analytics
+                AnalyticsService.logAppShare();
+                // Share the app
+                _shareApp();
+              },
+              tooltip: 'Share App',
+            ),
             Consumer<TransactionProvider>(
               builder: (context, provider, child) {
                 final profile = provider.selectedProfile;

@@ -3,33 +3,44 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
 import '../models/transaction.dart' as app_models;
 import '../models/category.dart' as app_models;
 import '../models/monthly_budget.dart';
 import '../models/profile.dart';
+import '../models/budget_alert.dart'; // Add import for BudgetAlert
 import '../db/database_helper.dart';
+import 'budget_alert_provider.dart';
 
 class TransactionProvider with ChangeNotifier {
   final List<app_models.Transaction> _transactions = [];
   final List<app_models.Category> _categories = [];
   final List<Profile> _profiles = [];
-  MonthlyBudget? _currentBudget;
+  final List<MonthlyBudget> _budgets = [];
   Profile? _selectedProfile;
   String _currentlyViewedMonth = DateFormat('yyyy-MM').format(DateTime.now());
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  BuildContext? _context;
 
-  List<app_models.Transaction> get transactions => _transactions;
-  List<app_models.Category> get categories => _categories;
+  void setContext(BuildContext context) {
+    _context = context;
+  }
+
+  List<app_models.Transaction> get transactions =>
+      List.unmodifiable(_transactions);
+  List<app_models.Category> get categories => List.unmodifiable(_categories);
   List<Profile> get profiles => _profiles;
-  MonthlyBudget? get currentBudget => _currentBudget;
+  MonthlyBudget? get currentBudget =>
+      _budgets.isNotEmpty ? _budgets.first : null;
   Profile? get selectedProfile => _selectedProfile;
 
   Future<void> loadProfiles() async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query('profiles');
 
     _profiles.clear();
     if (maps.isEmpty) {
-      // Create default profile if no profiles exist
       final now = DateTime.now();
       final id = await db.insert('profiles', {
         'name': 'Profile 1',
@@ -49,11 +60,9 @@ class TransactionProvider with ChangeNotifier {
     } else {
       _profiles.addAll(maps.map((map) => Profile.fromMap(map)));
 
-      // Find the selected profile
       _selectedProfile = _profiles.firstWhere(
         (p) => p.isSelected,
         orElse: () {
-          // If no profile is selected, select and update the first one
           final firstProfile = _profiles.first;
           db.update(
             'profiles',
@@ -74,7 +83,7 @@ class TransactionProvider with ChangeNotifier {
       throw Exception('Maximum 5 profiles allowed');
     }
 
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final now = DateTime.now();
 
     final id = await db.insert('profiles', {
@@ -95,11 +104,9 @@ class TransactionProvider with ChangeNotifier {
   }
 
   Future<void> switchProfile(int profileId) async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     await db.transaction((txn) async {
-      // Unselect all profiles
       await txn.update('profiles', {'is_selected': 0});
-      // Select the new profile
       await txn.update(
         'profiles',
         {'is_selected': 1},
@@ -108,7 +115,6 @@ class TransactionProvider with ChangeNotifier {
       );
     });
 
-    // Update local state
     for (var profile in _profiles) {
       final isSelected = profile.id == profileId;
       final index = _profiles.indexOf(profile);
@@ -116,7 +122,6 @@ class TransactionProvider with ChangeNotifier {
       if (isSelected) _selectedProfile = _profiles[index];
     }
 
-    // Reload data for new profile
     final currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
     await loadTransactions(currentMonth);
     await loadCurrentBudget(currentMonth);
@@ -131,7 +136,7 @@ class TransactionProvider with ChangeNotifier {
       throw Exception('Cannot delete the active profile');
     }
 
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     await db.delete('profiles', where: 'id = ?', whereArgs: [profileId]);
     _profiles.removeWhere((p) => p.id == profileId);
     notifyListeners();
@@ -141,17 +146,11 @@ class TransactionProvider with ChangeNotifier {
     if (_selectedProfile == null) await loadProfiles();
     _currentlyViewedMonth = month;
 
-    final currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
-
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
-      where: month == currentMonth
-          ? "date LIKE ? AND profile_id = ?"
-          : "date LIKE ? AND profile_id = ? AND NOT date LIKE ?",
-      whereArgs: month == currentMonth
-          ? ['$month%', _selectedProfile!.id]
-          : ['$month%', _selectedProfile!.id, '$currentMonth%'],
+      where: "date LIKE ? AND profile_id = ?",
+      whereArgs: ['$month%', _selectedProfile!.id],
     );
 
     _transactions.clear();
@@ -162,7 +161,7 @@ class TransactionProvider with ChangeNotifier {
   }
 
   Future<void> loadCategories() async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query('categories');
 
     _categories.clear();
@@ -173,7 +172,7 @@ class TransactionProvider with ChangeNotifier {
   Future<void> loadCurrentBudget(String month) async {
     if (_selectedProfile == null) await loadProfiles();
 
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'monthly_budgets',
       where: "month = ? AND profile_id = ?",
@@ -181,7 +180,10 @@ class TransactionProvider with ChangeNotifier {
       limit: 1,
     );
 
-    _currentBudget = maps.isEmpty ? null : MonthlyBudget.fromMap(maps.first);
+    _budgets.clear();
+    if (maps.isNotEmpty) {
+      _budgets.add(MonthlyBudget.fromMap(maps.first));
+    }
     notifyListeners();
   }
 
@@ -191,11 +193,9 @@ class TransactionProvider with ChangeNotifier {
       throw Exception('No profile selected');
     }
 
-    final profileId = profile!.id!;
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final id = await db.insert('transactions', transaction.toMap());
 
-    // Only add to UI list if transaction month matches currently viewed month
     final transactionMonth = DateFormat('yyyy-MM').format(transaction.date);
     if (transactionMonth == _currentlyViewedMonth) {
       _transactions.add(
@@ -203,56 +203,60 @@ class TransactionProvider with ChangeNotifier {
       );
     }
 
-    // If this is an income transaction, add it to the current month's budget
-    if (transaction.type == 'income') {
-      final month = transaction.date.toString().substring(
-            0,
-            7,
-          ); // YYYY-MM format
-      final currentBudget = await _getCurrentOrCreateBudget(month);
-      await setBudget(
-        MonthlyBudget(
-          id: currentBudget.id,
-          month: month,
-          amount: currentBudget.amount + transaction.amount,
-          profileId: profileId,
-        ),
+    // Check budget alerts
+    if (transaction.type == 'expense' && _context != null) {
+      final month = DateFormat('yyyy-MM').format(transaction.date);
+      final budget = currentBudget?.amount ?? 0;
+
+      // Get total expenses for overall budget alert
+      final totalExpenses = getTotalExpenses(month);
+
+      // Get category expenses for category budget alert
+      final categoryExpenses = _getCategoryExpensesForMonth(
+        transaction.categoryId,
+        month,
+      );
+
+      // Get the alert provider through the BuildContext
+      final alertProvider =
+          Provider.of<BudgetAlertProvider>(_context!, listen: false);
+
+      // Check category budget alerts
+      await alertProvider.checkAlerts(
+        transaction.categoryId,
+        categoryExpenses,
+        budget,
+      );
+
+      // Check overall budget alerts (pass null for categoryId to indicate overall budget)
+      await alertProvider.checkAlerts(
+        null,
+        totalExpenses,
+        budget,
       );
     }
 
     notifyListeners();
   }
 
-  Future<MonthlyBudget> _getCurrentOrCreateBudget(String month) async {
-    final profile = _selectedProfile;
-    if (profile?.id == null) {
-      throw Exception('No profile selected');
-    }
+  Future<void> deleteTransaction(int id) async {
+    final db = await _dbHelper.database;
+    await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+    _transactions.removeWhere((t) => t.id == id);
+    notifyListeners();
+  }
 
-    final profileId = profile!.id!;
-    final db = await DatabaseHelper.instance.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'monthly_budgets',
-      where: "month = ? AND profile_id = ?",
-      whereArgs: [month, profileId],
-      limit: 1,
-    );
-
-    if (maps.isEmpty) {
-      final budget = MonthlyBudget(
-        month: month,
-        amount: 0,
-        profileId: profileId,
-      );
-      final id = await db.insert('monthly_budgets', budget.toMap());
-      return budget.copyWith(id: id);
-    }
-
-    return MonthlyBudget.fromMap(maps.first);
+  double _getCategoryExpensesForMonth(int categoryId, String month) {
+    return _transactions
+        .where((tx) =>
+            tx.categoryId == categoryId &&
+            tx.type == 'expense' &&
+            DateFormat('yyyy-MM').format(tx.date) == month)
+        .fold(0.0, (sum, tx) => sum + tx.amount);
   }
 
   Future<void> addCategory(app_models.Category category) async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final id = await db.insert('categories', category.toMap());
     _categories.add(
       app_models.Category.fromMap({...category.toMap(), 'id': id}),
@@ -262,18 +266,16 @@ class TransactionProvider with ChangeNotifier {
 
   Future<void> setBudget(MonthlyBudget budget) async {
     final profile = _selectedProfile;
-    if (profile?.id == null) {
+    if (profile == null || profile.id == null) {
       throw Exception('No profile selected');
     }
 
-    final profileId = profile!.id!;
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
 
     final List<Map<String, dynamic>> maps = await db.query(
       'monthly_budgets',
       where: 'month = ? AND profile_id = ?',
-      whereArgs: [budget.month, profileId],
-      limit: 1,
+      whereArgs: [budget.month, profile.id],
     );
 
     if (maps.isNotEmpty) {
@@ -284,21 +286,48 @@ class TransactionProvider with ChangeNotifier {
         where: 'id = ?',
         whereArgs: [id],
       );
-      _currentBudget = MonthlyBudget(
+
+      final updatedBudget = budget.copyWith(
         id: id,
-        month: budget.month,
-        amount: budget.amount,
-        profileId: profileId,
+        profileId: profile.id,
       );
+
+      if (_budgets.isNotEmpty) {
+        _budgets[0] = updatedBudget;
+      } else {
+        _budgets.add(updatedBudget);
+      }
     } else {
-      final id = await db.insert('monthly_budgets', budget.toMap());
-      _currentBudget = MonthlyBudget(
-        id: id,
-        month: budget.month,
-        amount: budget.amount,
-        profileId: profileId,
-      );
+      final budgetWithProfile = budget.copyWith(profileId: profile.id);
+      final id = await db.insert('monthly_budgets', budgetWithProfile.toMap());
+
+      final newBudget = budgetWithProfile.copyWith(id: id);
+
+      if (_budgets.isNotEmpty) {
+        _budgets[0] = newBudget;
+      } else {
+        _budgets.add(newBudget);
+      }
     }
+
+    // Set or update default overall budget alert at 90%
+    if (_context != null) {
+      final alertProvider =
+          Provider.of<BudgetAlertProvider>(_context!, listen: false);
+      final alerts = alertProvider.alerts;
+      final overallAlert =
+          alerts.where((alert) => alert.categoryId == null).firstOrNull;
+
+      if (overallAlert == null) {
+        await alertProvider.addAlert(BudgetAlert(
+          categoryId: null,
+          threshold: 90,
+          isPercentage: true,
+          enabled: true,
+        ));
+      }
+    }
+
     notifyListeners();
   }
 
@@ -334,22 +363,15 @@ class TransactionProvider with ChangeNotifier {
     return expensesByCategory;
   }
 
-  Future<void> deleteTransaction(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
-    _transactions.removeWhere((t) => t.id == id);
-    notifyListeners();
-  }
-
   Future<void> deleteCategory(int id) async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     await db.delete('categories', where: 'id = ?', whereArgs: [id]);
     _categories.removeWhere((c) => c.id == id);
     notifyListeners();
   }
 
   Future<bool> canDeleteCategory(int id) async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final result = await db.query(
       'transactions',
       where: 'category_id = ?',
@@ -363,7 +385,7 @@ class TransactionProvider with ChangeNotifier {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'transactions',
       where: "date BETWEEN ? AND ?",
@@ -375,9 +397,7 @@ class TransactionProvider with ChangeNotifier {
 
   Future<void> exportTransactions(DateTime startDate, DateTime endDate) async {
     try {
-      print('TransactionProvider: Calling DatabaseHelper.exportToCSV');
-      final csvContent =
-          await DatabaseHelper.instance.exportToCSV(startDate, endDate);
+      final csvContent = await _dbHelper.exportToCSV(startDate, endDate);
 
       final fileName =
           'transactions_${DateFormat('yyyy_MM').format(startDate)}.csv';
@@ -391,18 +411,16 @@ class TransactionProvider with ChangeNotifier {
         subject: 'Money Track Transactions',
       );
 
-      // Clean up the temporary file
       if (await tempFile.exists()) {
         await tempFile.delete();
       }
     } catch (e) {
-      print('Export error in exportTransactions: $e');
       throw Exception('Failed to share transactions: $e');
     }
   }
 
   Future<void> updateProfile(Profile profile) async {
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
     await db.update(
       'profiles',
       profile.toMap(),
@@ -425,12 +443,10 @@ class TransactionProvider with ChangeNotifier {
       throw Exception('Maximum 5 profiles allowed');
     }
 
-    final db = await DatabaseHelper.instance.database;
+    final db = await _dbHelper.database;
 
-    // Use the profile's isSelected value or make it selected if it's the first profile
     final shouldSelect = profile.isSelected || _profiles.isEmpty;
 
-    // First unselect all existing profiles if this one will be selected
     if (shouldSelect) {
       await db.update('profiles', {'is_selected': 0});
     }
@@ -450,7 +466,6 @@ class TransactionProvider with ChangeNotifier {
       isSelected: shouldSelect,
     );
 
-    // Update any previously selected profile in memory
     if (shouldSelect) {
       for (var i = 0; i < _profiles.length; i++) {
         _profiles[i] = _profiles[i].copyWith(isSelected: false);

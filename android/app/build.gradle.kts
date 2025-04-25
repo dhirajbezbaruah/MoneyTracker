@@ -48,6 +48,9 @@ android {
         versionName = flutter.versionName
         // Add this line for AdMob
         manifestPlaceholders["AdMobAppId"] = "ca-app-pub-1380680048513180/9680715758" // Replace with your AdMob app ID
+        
+        // Add resource configuration for better indexing
+        resourceConfigurations.addAll(listOf("en", "es"))
     }
 
     buildTypes {
@@ -55,6 +58,21 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            
+            // Add Bundle configuration for better Play Store indexing
+            isShrinkResources = true
+        }
+    }
+    
+    bundle {
+        language {
+            enableSplit = true
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
         }
     }
 }

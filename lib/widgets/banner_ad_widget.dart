@@ -12,7 +12,6 @@ class BannerAdWidget extends StatefulWidget {
 class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isLoaded = false;
-  bool _isOffline = false;
   Timer? _loadingTimer;
 
   // Your specific banner ad unit ID
@@ -26,9 +25,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     // Set a timer to detect if ad fails to load
     _loadingTimer = Timer(const Duration(seconds: 8), () {
       if (!_isLoaded && mounted) {
-        setState(() {
-          _isOffline = true;
-        });
+        setState(() {});
       }
     });
   }
@@ -49,7 +46,6 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         onAdLoaded: (ad) {
           setState(() {
             _isLoaded = true;
-            _isOffline = false;
           });
           _loadingTimer?.cancel();
         },
@@ -58,7 +54,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           print('Ad failed to load: $error');
           if (mounted) {
             setState(() {
-              _isOffline = true;
+              // No need to set any flags, just update the UI to show nothing
             });
           }
           _loadingTimer?.cancel();
@@ -79,44 +75,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       );
     }
 
-    // Return a minimal placeholder when offline or failed to load
-    if (_isOffline) {
-      return Container(
-        height: 50,
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey.shade800.withOpacity(0.3)
-            : Colors.grey.shade200,
-        child: Center(
-          child: Text(
-            'Ad not available',
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey.shade400
-                  : Colors.grey.shade600,
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Return a loading placeholder when still trying to load
-    return SizedBox(
-      height: 50,
-      child: Center(
-        child: SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.0,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey.shade400
-                  : Colors.grey.shade700,
-            ),
-          ),
-        ),
-      ),
-    );
+    // Return an empty container when offline or ad not loaded
+    // This ensures nothing is displayed when no ad is available
+    return const SizedBox.shrink();
   }
 }

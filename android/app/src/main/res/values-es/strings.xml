@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">Money Track: Gestor de Gastos y Presupuesto</string>
+    
+    <!-- App Short Description (80 chars max) -->
+    <string name="app_short_description">Controla gastos, gestiona presupuestos y monitorea finanzas con múltiples perfiles</string>
+    
+    <!-- App Full Description (4000 chars max) -->
+    <string name="app_full_description">Money Track es tu solución completa de finanzas personales para seguir gastos, administrar presupuestos y analizar patrones de gasto.
+
+Características principales:
+• Soporte para múltiples perfiles - Gestiona finanzas para diferentes propósitos o miembros de familia
+• Seguimiento intuitivo de gastos - Registra fácilmente gastos diarios con categorías personalizadas
+• Planificación inteligente de presupuestos - Establece y controla presupuestos mensuales para cumplir metas financieras
+• Informes financieros detallados - Visualiza gastos con gráficos y desgloses completos
+• Almacenamiento seguro de datos - Todos tus datos financieros permanecen privados y seguros en tu dispositivo
+• Recordatorios de facturas - Nunca olvides pagos con notificaciones personalizables
+• Compartir gastos - Comparte resúmenes de gastos con familiares o contadores
+• Funcionalidad de exportación - Exporta datos financieros como CSV o PDF para análisis externo
+
+Ya sea que estés ahorrando para una meta, administrando gastos del hogar, siguiendo costos comerciales o simplemente controlando tus finanzas, Money Track proporciona todas las herramientas que necesitas en una aplicación fácil de usar.
+
+Perfecto para:
+• Individuos que controlan gastos personales
+• Familias que administran presupuestos domésticos
+• Pequeños empresarios que monitorean gastos
+• Estudiantes que rastrean gastos diarios y asignaciones
+• Cualquier persona que quiera mejorar sus hábitos financieros
+
+¡Descarga Money Track hoy y toma el control de tu vida financiera!</string>
+    
+    <!-- Keywords (separated by commas, 100 chars max) -->
+    <string name="app_keywords">gestor de gastos,planificador de presupuesto,administrador de dinero,finanzas personales</string>
+</resources>

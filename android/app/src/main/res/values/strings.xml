@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">Money Track: Budget &amp; Expense Manager</string>
+    
+    <!-- App Short Description (80 chars max) -->
+    <string name="app_short_description">Track expenses, manage budgets, and monitor finances with multiple profiles</string>
+    
+    <!-- App Full Description (4000 chars max) -->
+    <string name="app_full_description">Money Track is your complete personal finance solution for tracking expenses, managing budgets, and analyzing spending patterns.
+
+Key Features:
+• Multiple Profile Support - Track finances for different purposes or family members
+• Intuitive Expense Tracking - Effortlessly log daily expenses with custom categories
+• Smart Budget Planning - Set and monitor monthly budgets to meet financial goals
+• Detailed Financial Reports - Visualize spending with charts and comprehensive breakdowns
+• Secure Data Storage - All your financial data stays private and secure on your device
+• Bill Reminders - Never miss payments with customizable notifications
+• Expense Sharing - Share expense summaries with family members or accountants
+• Export Functionality - Export financial data as CSV or PDF for external analysis
+
+Whether you\'re saving for a goal, managing household expenses, tracking business costs, or just getting your finances under control, Money Track provides all the tools you need in one easy-to-use app.
+
+Perfect for:
+• Individuals tracking personal spending
+• Families managing household budgets
+• Small business owners monitoring expenses
+• Students tracking daily expenses and allowances
+• Anyone wanting to improve their financial habits
+
+Download Money Track today and take control of your financial life!</string>
+    
+    <!-- Keywords (separated by commas, 100 chars max) -->
+    <string name="app_keywords">expense tracker,budget planner,money manager,finance tracker,personal finance,spending analyzer</string>
+</resources>

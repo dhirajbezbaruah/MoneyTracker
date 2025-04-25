@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_tracker/screens/currency_settings_screen.dart';
+import 'package:money_tracker/screens/budget_alerts_screen.dart';
+import 'package:money_tracker/screens/categories_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
@@ -150,6 +152,21 @@ class SettingsScreen extends StatelessWidget {
                         },
                         showTrailing: true,
                       ),
+                      _buildSettingsCard(
+                        context,
+                        title: 'Categories',
+                        subtitle: 'Manage income and expense categories',
+                        iconData: Icons.category_outlined,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CategoriesScreen(),
+                            ),
+                          );
+                        },
+                        showTrailing: true,
+                      ),
                       const SizedBox(height: 16),
                       _buildSettingsCard(
                         context,
@@ -167,6 +184,20 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       _buildSettingsCard(
                         context,
+                        title: 'Budget Alerts',
+                        subtitle: 'Set up spending alerts for categories',
+                        iconData: Icons.notifications_outlined,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BudgetAlertsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildSettingsCard(
+                        context,
                         title: 'Share App',
                         subtitle: 'Tell your friends about Money Tracker',
                         iconData: Icons.share_outlined,
@@ -178,6 +209,21 @@ class SettingsScreen extends StatelessWidget {
                         subtitle: 'Love the app? Give us 5 stars!',
                         iconData: Icons.star_outline,
                         onTap: () => _rateApp(context),
+                      ),
+                      _buildSettingsCard(
+                        context,
+                        title: 'Try FinCalculators',
+                        subtitle: 'All financial calculators in one app',
+                        iconData: Icons.calculate_outlined,
+                        onTap: () async {
+                          const appUrl =
+                              'https://play.google.com/store/apps/details?id=com.fincalculators.android';
+                          final Uri url = Uri.parse(appUrl);
+                          if (!await launchUrl(url)) {
+                            throw Exception('Could not launch \$url');
+                          }
+                        },
+                        showTrailing: true,
                       ),
                       _buildSettingsCard(
                         context,
@@ -217,21 +263,6 @@ class SettingsScreen extends StatelessWidget {
                         },
                         showTrailing: true,
                       ),
-                      _buildSettingsCard(
-                        context,
-                        title: 'Try FinCalculators',
-                        subtitle: 'All financial calculators in one app',
-                        iconData: Icons.calculate_outlined,
-                        onTap: () async {
-                          const appUrl =
-                              'https://play.google.com/store/apps/details?id=com.fincalculators.android';
-                          final Uri url = Uri.parse(appUrl);
-                          if (!await launchUrl(url)) {
-                            throw Exception('Could not launch \$url');
-                          }
-                        },
-                        showTrailing: true,
-                      ),
                       const SizedBox(
                           height: 16), // A bit of padding at the bottom
                     ],
@@ -257,7 +288,7 @@ class SettingsScreen extends StatelessWidget {
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 3), // Further reduced vertical margin
+          horizontal: 16, vertical: 2), // Reduced from 3
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: Theme.of(context).brightness == Brightness.dark
@@ -288,13 +319,12 @@ class SettingsScreen extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 4, // Further reduced vertical padding
+          vertical: 2, // Reduced from 4
         ),
-        visualDensity: VisualDensity(
-            vertical:
-                -4), // Add negative visual density to make it more compact
+        visualDensity:
+            const VisualDensity(vertical: -4), // Maximum negative density
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(8), // Reduced from 10
           decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.dark
                 ? const Color(0xFF2E5C88).withOpacity(0.15)
@@ -303,7 +333,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Icon(
             iconData,
-            size: 22,
+            size: 20, // Reduced from 22
             color: Theme.of(context).brightness == Brightness.dark
                 ? const Color(0xFF2E5C88)
                 : const Color(0xFF2E5C88),
@@ -312,7 +342,7 @@ class SettingsScreen extends StatelessWidget {
         title: Text(
           title,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 15, // Reduced from 16
             fontWeight: FontWeight.w600,
             color: Theme.of(context).brightness == Brightness.dark
                 ? Colors.white.withOpacity(0.9)
@@ -322,6 +352,7 @@ class SettingsScreen extends StatelessWidget {
         subtitle: Text(
           subtitle,
           style: TextStyle(
+            fontSize: 13, // Added to reduce text size
             color: Theme.of(context).brightness == Brightness.dark
                 ? Colors.grey.shade400
                 : Colors.grey.shade700,
@@ -329,7 +360,7 @@ class SettingsScreen extends StatelessWidget {
         ),
         trailing: showTrailing
             ? Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6), // Reduced from 8
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? const Color(0xFF2E5C88).withOpacity(0.1)

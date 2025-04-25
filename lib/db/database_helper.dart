@@ -22,13 +22,19 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3, // Increased version number
+      version: 5, // Increment version for schema change
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    // First check if budget_alerts table exists
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='budget_alerts'",
+    );
+    final budgetAlertsExists = tables.isNotEmpty;
+
     if (oldVersion < 2) {
       await db.execute('''
         CREATE TABLE profiles (
@@ -47,18 +53,15 @@ class DatabaseHelper {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      await db.execute(
-        'ALTER TABLE transactions ADD COLUMN profile_id INTEGER',
-      );
-      await db.execute(
-        'ALTER TABLE monthly_budgets ADD COLUMN profile_id INTEGER',
-      );
+      await db
+          .execute('ALTER TABLE transactions ADD COLUMN profile_id INTEGER');
+      await db
+          .execute('ALTER TABLE monthly_budgets ADD COLUMN profile_id INTEGER');
       await db.execute('UPDATE transactions SET profile_id = 1');
       await db.execute('UPDATE monthly_budgets SET profile_id = 1');
     }
 
     if (oldVersion < 3) {
-      // Add created_at column to profiles if it doesn't exist
       final tableInfo = await db.rawQuery('PRAGMA table_info(profiles)');
       final hasCreatedAt =
           tableInfo.any((column) => column['name'] == 'created_at');
@@ -66,9 +69,37 @@ class DatabaseHelper {
       if (!hasCreatedAt) {
         await db.execute(
             'ALTER TABLE profiles ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
-        // Update existing profiles with current timestamp
         await db.execute("UPDATE profiles SET created_at = datetime('now')");
       }
+    }
+
+    // Create budget_alerts table if it doesn't exist, regardless of version
+    if (!budgetAlertsExists) {
+      await db.execute('''
+        CREATE TABLE budget_alerts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category_id INTEGER NOT NULL,
+          threshold REAL NOT NULL,
+          is_percentage INTEGER NOT NULL DEFAULT 0,
+          enabled INTEGER NOT NULL DEFAULT 1,
+          FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
+        )
+      ''');
+    }
+
+    if (oldVersion < 5) {
+      // Drop old budget_alerts table and recreate with nullable category_id
+      await db.execute('DROP TABLE IF EXISTS budget_alerts');
+      await db.execute('''
+        CREATE TABLE budget_alerts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category_id INTEGER,
+          threshold REAL NOT NULL,
+          is_percentage INTEGER NOT NULL DEFAULT 0,
+          enabled INTEGER NOT NULL DEFAULT 1,
+          FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
+        )
+      ''');
     }
   }
 
@@ -124,6 +155,17 @@ class DatabaseHelper {
         amount $realType,
         profile_id $integerType,
         FOREIGN KEY (profile_id) REFERENCES profiles (id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE budget_alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER,
+        threshold REAL NOT NULL,
+        is_percentage INTEGER NOT NULL DEFAULT 0,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
       )
     ''');
 
