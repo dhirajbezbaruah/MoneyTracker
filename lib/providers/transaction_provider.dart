@@ -203,6 +203,23 @@ class TransactionProvider with ChangeNotifier {
       );
     }
 
+    // Handle recurring transactions
+    if (transaction.isRecurring && transaction.recurrenceFrequency != null) {
+      await _createRecurringTransactions(
+        app_models.Transaction(
+            id: id,
+            amount: transaction.amount,
+            type: transaction.type,
+            categoryId: transaction.categoryId,
+            description: transaction.description,
+            date: transaction.date,
+            profileId: transaction.profileId,
+            isRecurring: transaction.isRecurring,
+            recurrenceFrequency: transaction.recurrenceFrequency,
+            recurrenceEndDate: transaction.recurrenceEndDate),
+      );
+    }
+
     // Check budget alerts
     if (transaction.type == 'expense' && _context != null) {
       final month = DateFormat('yyyy-MM').format(transaction.date);
@@ -272,6 +289,7 @@ class TransactionProvider with ChangeNotifier {
 
     final db = await _dbHelper.database;
 
+    // Check if a budget already exists for this month
     final List<Map<String, dynamic>> maps = await db.query(
       'monthly_budgets',
       where: 'month = ? AND profile_id = ?',
@@ -282,7 +300,10 @@ class TransactionProvider with ChangeNotifier {
       final id = maps.first['id'];
       await db.update(
         'monthly_budgets',
-        {'amount': budget.amount},
+        {
+          'amount': budget.amount,
+          'is_recurring': budget.isRecurring ? 1 : 0,
+        },
         where: 'id = ?',
         whereArgs: [id],
       );
@@ -297,16 +318,25 @@ class TransactionProvider with ChangeNotifier {
       } else {
         _budgets.add(updatedBudget);
       }
+
+      // If recurring is enabled, set the same budget for future months (up to 6 months ahead)
+      if (budget.isRecurring) {
+        await _setRecurringBudgets(budget);
+      }
     } else {
       final budgetWithProfile = budget.copyWith(profileId: profile.id);
       final id = await db.insert('monthly_budgets', budgetWithProfile.toMap());
-
       final newBudget = budgetWithProfile.copyWith(id: id);
 
       if (_budgets.isNotEmpty) {
         _budgets[0] = newBudget;
       } else {
         _budgets.add(newBudget);
+      }
+
+      // If recurring is enabled, set the same budget for future months
+      if (budget.isRecurring) {
+        await _setRecurringBudgets(budget);
       }
     }
 
@@ -329,6 +359,49 @@ class TransactionProvider with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> _setRecurringBudgets(MonthlyBudget budget) async {
+    final db = await _dbHelper.database;
+    final currentDate = DateTime.parse('${budget.month}-01');
+
+    // Set budgets for next 6 months
+    for (int i = 1; i <= 6; i++) {
+      final futureDate = DateTime(currentDate.year, currentDate.month + i);
+      final futureMonth =
+          '${futureDate.year}-${futureDate.month.toString().padLeft(2, '0')}';
+
+      // Check if budget already exists for this month
+      final existing = await db.query(
+        'monthly_budgets',
+        where: 'month = ? AND profile_id = ?',
+        whereArgs: [futureMonth, budget.profileId],
+      );
+
+      if (existing.isEmpty) {
+        // Create new budget for future month
+        final futureBudget = budget.copyWith(
+          month: futureMonth,
+          isRecurring: true,
+        );
+        await db.insert('monthly_budgets', futureBudget.toMap());
+        print(
+            'Created recurring budget for: $futureMonth with amount: ${budget.amount}');
+      } else {
+        // Update existing budget for future month
+        await db.update(
+          'monthly_budgets',
+          {
+            'amount': budget.amount,
+            'is_recurring': 1,
+          },
+          where: 'month = ? AND profile_id = ?',
+          whereArgs: [futureMonth, budget.profileId],
+        );
+        print(
+            'Updated recurring budget for: $futureMonth with amount: ${budget.amount}');
+      }
+    }
   }
 
   double getTotalExpenses(String month) {
@@ -408,7 +481,7 @@ class TransactionProvider with ChangeNotifier {
       await Share.shareFiles(
         [tempFile.path],
         mimeTypes: ['text/csv'],
-        subject: 'Money Track Transactions',
+        subject: 'Budget Tracker Transactions',
       );
 
       if (await tempFile.exists()) {
@@ -478,5 +551,77 @@ class TransactionProvider with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> _createRecurringTransactions(
+      app_models.Transaction transaction) async {
+    if (!transaction.isRecurring || transaction.recurrenceFrequency == null) {
+      return;
+    }
+
+    final db = await _dbHelper.database;
+    DateTime nextDate = _getNextRecurrenceDate(
+        transaction.date, transaction.recurrenceFrequency!);
+
+    // Generate recurring transactions up to end date or 1 year ahead if no end date
+    final DateTime endDate = transaction.recurrenceEndDate ??
+        DateTime.now().add(const Duration(days: 365));
+
+    // Maximum 100 recurring instances to prevent excessive generation
+    int maxInstances = 100;
+
+    while (nextDate.isBefore(endDate) && maxInstances > 0) {
+      final recurringTransaction = app_models.Transaction(
+        amount: transaction.amount,
+        type: transaction.type,
+        categoryId: transaction.categoryId,
+        description: transaction.description,
+        date: nextDate,
+        profileId: transaction.profileId,
+        isRecurring:
+            false, // Only the parent transaction is marked as recurring
+        recurrenceFrequency: null,
+        recurrenceEndDate: null,
+      );
+
+      await db.insert('transactions', recurringTransaction.toMap());
+
+      // Move to the next recurrence date
+      nextDate =
+          _getNextRecurrenceDate(nextDate, transaction.recurrenceFrequency!);
+      maxInstances--;
+    }
+  }
+
+  DateTime _getNextRecurrenceDate(DateTime currentDate, String frequency) {
+    switch (frequency) {
+      case 'daily':
+        return currentDate.add(const Duration(days: 1));
+      case 'weekly':
+        return currentDate.add(const Duration(days: 7));
+      case 'monthly':
+        // Add 1 month while handling month length differences
+        final nextMonth = DateTime(
+          currentDate.year,
+          currentDate.month + 1,
+          currentDate.day >
+                  DateTime(currentDate.year, currentDate.month + 2, 0).day
+              ? DateTime(currentDate.year, currentDate.month + 2, 0).day
+              : currentDate.day,
+        );
+        return nextMonth;
+      case 'yearly':
+        // Add 1 year while handling leap years
+        final nextYear = DateTime(
+          currentDate.year + 1,
+          currentDate.month,
+          currentDate.month == 2 && currentDate.day == 29
+              ? 28 // Handle leap year
+              : currentDate.day,
+        );
+        return nextYear;
+      default:
+        return currentDate.add(const Duration(days: 30)); // Default to monthly
+    }
   }
 }

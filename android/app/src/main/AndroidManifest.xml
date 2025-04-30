@@ -10,7 +10,7 @@
         </intent>
     </queries>
     <application
-        android:label="Money Track: Budget &amp; Expense Manager"
+        android:label="Budget Tracker: Budget &amp; Expense Manager"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         

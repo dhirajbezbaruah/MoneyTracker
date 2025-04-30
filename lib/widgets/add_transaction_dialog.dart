@@ -19,6 +19,9 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   String _type = 'expense';
   int? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
+  bool _isRecurring = false;
+  DateTime? _recurrenceEndDate;
+  bool _isRecurringExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -33,211 +36,327 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       data: theme.copyWith(
         dialogTheme: DialogTheme(
           backgroundColor: colorScheme.surface,
-          surfaceTintColor: colorScheme.surfaceTint,
-          elevation: 4.0,
+          surfaceTintColor: Colors.transparent,
+          elevation: 8.0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
+            borderRadius: BorderRadius.circular(20.0),
           ),
         ),
       ),
       child: AlertDialog(
-        title: Text(_type == 'expense' ? 'Add Expense' : 'Add Income'),
-        content: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(
-                      value: 'expense',
-                      label: const Text('Expense'),
-                      icon: const Icon(Icons.arrow_downward),
-                    ),
-                    ButtonSegment(
-                      value: 'income',
-                      label: const Text('Income'),
-                      icon: const Icon(Icons.arrow_upward),
-                    ),
-                  ],
-                  selected: {_type},
-                  onSelectionChanged: (Set<String> newSelection) {
-                    setState(() {
-                      _type = newSelection.first;
-                      _selectedCategoryId = null;
-                    });
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.resolveWith((
-                      states,
-                    ) {
-                      if (states.contains(MaterialState.selected)) {
-                        return mainColor.withOpacity(0.1);
-                      }
-                      return null;
-                    }),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Consumer<CurrencyProvider>(
-                  builder: (context, currencyProvider, _) {
-                    return TextFormField(
-                      controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Amount',
-                        prefixText: currencyProvider.currencySymbol,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        filled: true,
-                        fillColor: colorScheme.surfaceVariant.withOpacity(0.1),
-                      ),
-                      autofocus: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an amount';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        if (double.parse(value) <= 0) {
-                          return 'Amount must be greater than 0';
-                        }
-                        return null;
-                      },
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<int>(
-                  value: _selectedCategoryId,
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        title: Text(
+          _type == 'expense' ? 'Add Expense' : 'Add Income',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: mainColor,
+          ),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Transaction Type Selector
+                  Card(
+                    elevation: 0,
+                    color: colorScheme.surfaceVariant.withOpacity(0.2),
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.1),
-                  ),
-                  items: categories.isEmpty
-                      ? [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('No categories'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SegmentedButton<String>(
+                        segments: [
+                          ButtonSegment(
+                            value: 'expense',
+                            label: const Text('Expense'),
+                            icon: Icon(Icons.arrow_downward, color: mainColor),
                           ),
-                        ]
-                      : categories.map((category) {
-                          return DropdownMenuItem(
-                            value: category.id,
-                            child: Text(category.name),
-                          );
-                        }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategoryId = value;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select a category';
-                    }
-                    return null;
-                  },
-                  isExpanded: true,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText: 'Description (Optional)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.1),
-                  ),
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(
-                        const Duration(days: 180),
-                      ), // 6 months ahead
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: Theme.of(
-                              context,
-                            ).colorScheme.copyWith(primary: mainColor),
+                          ButtonSegment(
+                            value: 'income',
+                            label: const Text('Income'),
+                            icon: Icon(Icons.arrow_upward, color: mainColor),
                           ),
-                          child: child!,
-                        );
-                      },
-                    );
-                    if (date != null) {
+                        ],
+                        selected: {_type},
+                        onSelectionChanged: (Set<String> newSelection) {
+                          setState(() {
+                            _type = newSelection.first;
+                            _selectedCategoryId = null;
+                          });
+                        },
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.resolveWith((states) {
+                            if (states.contains(MaterialState.selected)) {
+                              return mainColor.withOpacity(0.1);
+                            }
+                            return Colors.transparent;
+                          }),
+                          foregroundColor: MaterialStateProperty.all(mainColor),
+                          shape: MaterialStateProperty.all(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Amount Field
+                  Consumer<CurrencyProvider>(
+                    builder: (context, currencyProvider, _) {
+                      return TextFormField(
+                        controller: _amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: InputDecoration(
+                          labelText: 'Amount',
+                          prefixText: '${currencyProvider.currencySymbol} ',
+                          prefixStyle: TextStyle(
+                              color: mainColor, fontWeight: FontWeight.bold),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor:
+                              colorScheme.surfaceVariant.withOpacity(0.05),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 18),
+                        ),
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w500),
+                        autofocus: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty)
+                            return 'Please enter an amount';
+                          if (double.tryParse(value) == null)
+                            return 'Please enter a valid number';
+                          if (double.parse(value) <= 0)
+                            return 'Amount must be greater than 0';
+                          return null;
+                        },
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Category Dropdown
+                  DropdownButtonFormField<int>(
+                    value: _selectedCategoryId,
+                    decoration: InputDecoration(
+                      labelText: 'Category',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: colorScheme.surfaceVariant.withOpacity(0.05),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 18),
+                    ),
+                    items: categories.isEmpty
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('No categories available'),
+                            ),
+                          ]
+                        : categories.map((category) {
+                            return DropdownMenuItem(
+                              value: category.id,
+                              child: Text(category.name),
+                            );
+                          }).toList(),
+                    onChanged: (value) {
                       setState(() {
-                        _selectedDate = date;
+                        _selectedCategoryId = value;
                       });
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
+                    },
+                    validator: (value) =>
+                        value == null ? 'Please select a category' : null,
+                    isExpanded: true,
+                    dropdownColor: colorScheme.surface,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Description Field
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description (Optional)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: colorScheme.surfaceVariant.withOpacity(0.05),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 18),
                     ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Theme.of(context).dividerColor),
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Date Picker
+                  ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      color: colorScheme.surfaceVariant.withOpacity(0.1),
+                      side: BorderSide(color: colorScheme.outlineVariant),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today, color: mainColor, size: 20),
-                        const SizedBox(width: 12),
-                        Text(
-                          DateFormat('EEE, MMM d, yyyy').format(_selectedDate),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white.withOpacity(0.9)
-                                : Colors.black87,
+                    leading: Icon(Icons.calendar_today, color: mainColor),
+                    title: Text(
+                      DateFormat('EEE, MMM d, yyyy').format(_selectedDate),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
+                      ),
+                    ),
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 180)),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme:
+                                  colorScheme.copyWith(primary: mainColor),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _selectedDate = date;
+                        });
+                      }
+                    },
+                  ),
+
+                  // Recurring Transaction Section
+                  const SizedBox(height: 16),
+                  ExpansionTile(
+                    title: Text(
+                      'Recurring Transaction',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: mainColor,
+                      ),
+                    ),
+                    subtitle: Text(
+                      _isRecurring ? 'Repeats monthly' : 'One-time transaction',
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    ),
+                    leading: Icon(Icons.repeat, color: mainColor),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    collapsedBackgroundColor:
+                        colorScheme.surfaceVariant.withOpacity(0.05),
+                    backgroundColor:
+                        colorScheme.surfaceVariant.withOpacity(0.05),
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Enable Monthly Recurring'),
+                        value: _isRecurring,
+                        activeColor: mainColor,
+                        onChanged: (value) {
+                          setState(() {
+                            _isRecurring = value;
+                          });
+                        },
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      if (_isRecurring) ...[
+                        const SizedBox(height: 8),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: colorScheme.outlineVariant),
                           ),
+                          leading: Icon(Icons.event_repeat, color: mainColor),
+                          title: Text(
+                            'End Date',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
+                          ),
+                          trailing: Text(
+                            _recurrenceEndDate != null
+                                ? DateFormat('MMM d, yyyy')
+                                    .format(_recurrenceEndDate!)
+                                : 'None (1 year)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _recurrenceEndDate ??
+                                  DateTime.now().add(const Duration(days: 365)),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now()
+                                  .add(const Duration(days: 365 * 5)),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: colorScheme.copyWith(
+                                        primary: mainColor),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _recurrenceEndDate = date;
+                              });
+                            }
+                          },
                         ),
                       ],
-                    ),
+                    ],
+                    onExpansionChanged: (expanded) {
+                      setState(() {
+                        _isRecurringExpanded = expanded;
+                      });
+                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.onSurfaceVariant,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
             child: const Text('Cancel'),
           ),
           FilledButton(
@@ -253,6 +372,9 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                       : _descriptionController.text,
                   date: _selectedDate,
                   profileId: selectedProfile!.id!,
+                  isRecurring: _isRecurring,
+                  recurrenceFrequency: _isRecurring ? 'monthly' : null,
+                  recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
                 );
                 context.read<TransactionProvider>().addTransaction(transaction);
                 Navigator.pop(context);
@@ -261,6 +383,10 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
             style: FilledButton.styleFrom(
               backgroundColor: mainColor,
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Save'),
           ),

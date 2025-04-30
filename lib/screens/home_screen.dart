@@ -100,48 +100,66 @@ class _HomeScreenState extends State<HomeScreen> {
     final provider = context.read<TransactionProvider>();
     final currencyProvider = context.read<CurrencyProvider>();
     _budgetController.text = provider.currentBudget?.amount.toString() ?? '';
+    bool isRecurring = provider.currentBudget?.isRecurring ?? false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Set Monthly Budget'),
-        content: Consumer<CurrencyProvider>(
-          builder: (context, currencyProvider, _) {
-            return TextField(
-              controller: _budgetController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Budget Amount',
-                prefixText: currencyProvider.currencySymbol,
-              ),
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final amount = double.tryParse(_budgetController.text);
-              if (amount != null) {
-                final selectedProfile = provider.selectedProfile;
-                if (selectedProfile != null) {
-                  provider.setBudget(
-                    MonthlyBudget(
-                      month: DateFormat('yyyy-MM').format(selectedDate),
-                      amount: amount,
-                      profileId: selectedProfile.id!,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Set Monthly Budget'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Consumer<CurrencyProvider>(
+                builder: (context, currencyProvider, _) {
+                  return TextField(
+                    controller: _budgetController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Budget Amount',
+                      prefixText: currencyProvider.currencySymbol,
                     ),
                   );
-                  Navigator.pop(context);
-                }
-              }
-            },
-            child: const Text('Save'),
+                },
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Recurring Budget'),
+                subtitle: const Text('Automatically set for future months'),
+                value: isRecurring,
+                onChanged: (value) {
+                  setState(() => isRecurring = value);
+                },
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final amount = double.tryParse(_budgetController.text);
+                if (amount != null) {
+                  final selectedProfile = provider.selectedProfile;
+                  if (selectedProfile != null) {
+                    provider.setBudget(
+                      MonthlyBudget(
+                        month: DateFormat('yyyy-MM').format(selectedDate),
+                        amount: amount,
+                        profileId: selectedProfile.id!,
+                        isRecurring: isRecurring,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }

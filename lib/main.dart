@@ -19,6 +19,7 @@ import 'services/app_open_ad_manager.dart';
 import 'services/app_lifecycle_reactor.dart';
 import 'services/deep_link_service.dart';
 import 'services/app_rating_service.dart';
+import 'db/database_helper.dart';
 
 late AppOpenAdManager appOpenAdManager;
 late AppLifecycleReactor appLifecycleReactor;
@@ -34,11 +35,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void main() async {
-  // This is critical and must be called first
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Only initialize what's absolutely necessary for app to start
-  // Initialize Firebase Core - needed for basic app functionality
+  // Force database reload to ensure schema is updated
+  await DatabaseHelper.instance.forceReload();
+
+  // Initialize Firebase
   await Firebase.initializeApp();
 
   // Initialize Version Utility - lightweight operation
@@ -159,7 +161,7 @@ class MyApp extends StatelessWidget {
           });
 
           return MaterialApp(
-            title: 'Money Tracker',
+            title: 'Budget Tracker',
             themeMode: themeProvider.themeMode,
             theme: ThemeData(
               useMaterial3: true,

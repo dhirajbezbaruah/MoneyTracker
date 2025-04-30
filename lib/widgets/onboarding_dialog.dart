@@ -112,14 +112,16 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
               Flexible(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12), // Reduced vertical padding
+                      horizontal: 20,
+                      vertical: 16), // Increased vertical padding
                   shrinkWrap: true,
                   children: [
                     _buildThemeSection(),
-                    const SizedBox(height: 16), // Reduced from 20
+                    const SizedBox(height: 24), // Increased spacing
                     _buildProfileSection(),
-                    const SizedBox(height: 16), // Reduced from 20
+                    const SizedBox(height: 24), // Increased spacing
                     _buildCurrencySection(),
+                    const SizedBox(height: 8), // Add some bottom padding
                   ],
                 ),
               ),
@@ -135,7 +137,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-          horizontal: 20, vertical: 12), // Reduced from 16
+          horizontal: 20, vertical: 16), // Adjusted vertical padding
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF2E5C88), Color(0xFF1E3D59)],
@@ -151,16 +153,16 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Welcome to Money Track!',
+            'Welcome to Budget Tracker!',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18, // Slightly larger title
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4), // Adjusted spacing
           const Text(
-            'Set up your profile and preferences. you can update them later in settings.',
+            'Set up your profile and preferences. You can update them later in settings.', // Corrected typo
             style: TextStyle(
               color: Colors.white70,
               fontSize: 13,
@@ -176,13 +178,13 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Theme',
+          'Choose Your Theme', // More engaging title
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 6), // Reduced from 8
+        const SizedBox(height: 8), // Consistent spacing
         Card(
           margin: EdgeInsets.zero,
           elevation: 0.5,
@@ -200,12 +202,12 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
             borderRadius: BorderRadius.circular(16),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 10), // Reduced from 12
+                  horizontal: 16, vertical: 12), // Adjusted padding
               child: Row(
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 40, // Slightly larger icon container
+                    height: 40,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: const Color(0xFF2E5C88).withOpacity(0.1),
@@ -213,15 +215,16 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                     ),
                     child: Icon(
                       _selectedThemeMode == ThemeMode.system
-                          ? Icons.brightness_auto
+                          ? Icons
+                              .brightness_auto_outlined // Use outlined icons for consistency
                           : _selectedThemeMode == ThemeMode.light
-                              ? Icons.light_mode
-                              : Icons.dark_mode,
+                              ? Icons.light_mode_outlined
+                              : Icons.dark_mode_outlined,
                       color: const Color(0xFF2E5C88),
-                      size: 20,
+                      size: 22, // Slightly larger icon
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16), // Increased spacing
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,18 +232,20 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                         const Text(
                           'App Theme',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13, // Slightly smaller label
                             color: Colors.grey,
                           ),
                         ),
+                        const SizedBox(height: 2), // Add small gap
                         Text(
                           _selectedThemeMode == ThemeMode.system
-                              ? 'System Theme'
+                              ? 'System Default' // Clearer text
                               : _selectedThemeMode == ThemeMode.light
                                   ? 'Light Theme'
                                   : 'Dark Theme',
                           style: TextStyle(
                             fontSize: 15,
+                            fontWeight: FontWeight.w500, // Slightly bolder
                             color:
                                 Theme.of(context).brightness == Brightness.dark
                                     ? Colors.white
@@ -250,7 +255,8 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios, size: 16),
+                  const Icon(Icons.arrow_forward_ios,
+                      size: 16, color: Colors.grey), // Consistent icon color
                 ],
               ),
             ),
@@ -363,13 +369,13 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Profile',
+          'Set Up Your Profile', // More engaging title
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 6), // Reduced from 8
+        const SizedBox(height: 8), // Consistent spacing
         Card(
           margin: EdgeInsets.zero,
           elevation: 0.5,
@@ -385,50 +391,60 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8, // Reduced from 12
-                  horizontal: 16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: _nameController,
-                      onChanged: (_) => setState(
-                          () => _nameError = null), // Clear error on change
-                      decoration: InputDecoration(
-                        labelText: 'Profile Name',
-                        hintText: 'Enter your name or nickname',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8, // Reduced from 12
-                        ),
-                        isDense: true,
-                        counterText: '', // Hide character counter
-                        errorText: _nameError,
-                      ),
-                      style: const TextStyle(fontSize: 14), // Reduced font size
-                      maxLength: 10,
+                padding: const EdgeInsets.fromLTRB(
+                    16, 12, 16, 12), // Adjusted padding
+                child: TextField(
+                  controller: _nameController,
+                  onChanged: (_) => setState(
+                      () => _nameError = null), // Clear error on change
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(
+                      Icons.person_outline, // Add prefix icon
+                      color: Colors.grey.shade600,
+                      size: 20,
                     ),
-                  ],
+                    labelText: 'Profile Name',
+                    hintText: 'E.g., Personal, Family', // More specific hint
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none, // Remove inner border
+                    ),
+                    filled: true, // Add background fill
+                    fillColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade800.withOpacity(0.5)
+                        : Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10, // Adjusted vertical padding
+                    ),
+                    isDense: true,
+                    counterText: '', // Hide character counter
+                    errorText: _nameError,
+                    errorStyle:
+                        const TextStyle(fontSize: 11), // Smaller error text
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                  maxLength: 15, // Slightly increased max length
                 ),
               ),
-              const Divider(height: 1),
+              const Divider(
+                  height: 0.5, indent: 16, endIndent: 16), // Thinner divider
               InkWell(
                 onTap: _showIconSelector,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 8, // Reduced from 12
+                    vertical: 12, // Adjusted padding
                   ),
                   child: Row(
                     children: [
                       Container(
-                        width: 36,
-                        height: 36,
+                        width: 40, // Consistent size
+                        height: 40,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2E5C88).withOpacity(0.1),
@@ -437,10 +453,10 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                         child: Icon(
                           _icons[_selectedIcon],
                           color: const Color(0xFF2E5C88),
-                          size: 20,
+                          size: 22, // Consistent size
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16), // Increased spacing
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,14 +464,17 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                             const Text(
                               'Profile Icon',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13, // Consistent label size
                                 color: Colors.grey,
                               ),
                             ),
+                            const SizedBox(height: 2), // Add small gap
                             Text(
-                              'Tap to change',
+                              'Tap to change icon', // Clearer text
                               style: TextStyle(
                                 fontSize: 15,
+                                fontWeight:
+                                    FontWeight.w500, // Consistent weight
                                 color: Theme.of(context).brightness ==
                                         Brightness.dark
                                     ? Colors.white
@@ -465,7 +484,9 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, size: 16),
+                      const Icon(Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.grey), // Consistent icon color
                     ],
                   ),
                 ),
@@ -572,13 +593,13 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Currency',
+          'Select Your Currency', // More engaging title
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 8), // Consistent spacing
         Card(
           margin: EdgeInsets.zero,
           elevation: 0.5,
@@ -595,39 +616,44 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
             onTap: _showCurrencySelector,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12), // Adjusted padding
               child: Row(
                 children: [
                   Container(
-                    width: 40,
+                    width: 40, // Consistent size
                     height: 40,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: const Color(0xFF2E5C88).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Text(
-                      _selectedCurrencySymbol,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E5C88),
+                    child: Center(
+                      // Center the symbol
+                      child: Text(
+                        _selectedCurrencySymbol,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16, // Adjusted size
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E5C88),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16), // Increased spacing
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Currency',
+                          'Default Currency', // Clearer label
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13, // Consistent label size
                             color: Colors.grey,
                           ),
                         ),
+                        const SizedBox(height: 2), // Add small gap
                         Text(
                           currencies.firstWhere(
                             (c) => c['name']!.contains('($_selectedCurrency)'),
@@ -635,6 +661,7 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                           )['name']!,
                           style: TextStyle(
                             fontSize: 15,
+                            fontWeight: FontWeight.w500, // Consistent weight
                             overflow: TextOverflow.ellipsis,
                             color:
                                 Theme.of(context).brightness == Brightness.dark
@@ -646,7 +673,8 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios, size: 16),
+                  const Icon(Icons.arrow_forward_ios,
+                      size: 16, color: Colors.grey), // Consistent icon color
                 ],
               ),
             ),
@@ -784,23 +812,28 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
 
   Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      padding:
+          const EdgeInsets.fromLTRB(20, 12, 20, 20), // Increased bottom padding
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.black.withOpacity(0.05)
-            : Colors.grey.shade50,
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey.shade800
-                : Colors.grey.shade200,
-            width: 0.5,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey.shade900.withOpacity(0.5) // Darker footer bg
+              : Colors.grey.shade50,
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey.shade800
+                  : Colors.grey.shade200,
+              width: 0.5,
+            ),
           ),
-        ),
-      ),
+          borderRadius: const BorderRadius.only(
+            // Round bottom corners if needed
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          )),
       child: SizedBox(
         width: double.infinity,
-        height: 44, // Setting a specific height for the button
+        height: 48, // Slightly taller button
         child: FilledButton(
           onPressed: _onGetStarted,
           style: FilledButton.styleFrom(
@@ -809,10 +842,10 @@ class _OnboardingDialogState extends State<OnboardingDialog> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            elevation: 0.5,
-            padding: EdgeInsets.zero, // Remove padding as we use a fixed height
+            elevation: 1, // Add slight elevation
+            padding: const EdgeInsets.symmetric(vertical: 12), // Ensure padding
             textStyle: const TextStyle(
-              fontSize: 15,
+              fontSize: 16, // Slightly larger text
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
             ),

@@ -75,9 +75,9 @@ class AppRatingService {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Enjoying Money Track?'),
+          title: const Text('Enjoying Budget Tracker?'),
           content: const Text(
-              'If you find Money Track helpful for managing your finances, please consider rating it in the Play Store. Your feedback helps us improve!'),
+              'If you find Budget Tracker helpful for managing your finances, please consider rating it in the Play Store. Your feedback helps us improve!'),
           actions: [
             TextButton(
               child: const Text('Not Now'),

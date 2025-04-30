@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:money_tracker/models/monthly_budget.dart';
@@ -592,83 +593,81 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar color to match the app theme
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark
-            ? Brightness.light
-            : Brightness.dark,
-      ),
-    );
-
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient background
+          // Modern gradient background
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF2E5C88), Color(0xFF1E3D59)],
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColor.withOpacity(0.8),
+                ],
               ),
             ),
           ),
 
-          // Wave pattern overlay
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.07,
-              child: Image.asset(
-                'assets/images/wave_pattern.png',
-                fit: BoxFit.cover,
-              ),
-              // If you don't have this asset, replace with a Container:
-              // child: CustomPaint(
-              //   painter: WavePatternPainter(),
-              // ),
-            ),
-          ),
-
-          // Content
           SafeArea(
             child: Column(
               children: [
+                // Minimalist progress indicator
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: List.generate(
+                      3,
+                      (index) => Expanded(
+                        child: Container(
+                          height: 3,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: _currentPage >= index
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(1.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // App logo and name
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Hero(
-                        tag: 'app_logo',
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.account_balance_wallet,
-                            color: Color(0xFF2E5C88),
-                            size: 28,
-                          ),
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.account_balance_wallet,
+                          color: Theme.of(context).primaryColor,
+                          size: 28,
                         ),
                       ),
                       const SizedBox(width: 12),
                       const Text(
-                        'Money Track',
+                        'Budget Tracker',
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
                       ),
@@ -676,30 +675,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                 ),
 
-                // Page dots
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      3,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 8,
-                        width: _currentPage == index ? 24 : 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Page content
+                // Main content
                 Expanded(
                   child: PageView(
                     controller: _pageController,
@@ -713,44 +689,51 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                 ),
 
-                // Navigation buttons
+                // Navigation
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Back button
-                      _currentPage > 0
-                          ? TextButton.icon(
-                              onPressed: _previousPage,
-                              icon: const Icon(Icons.arrow_back_ios_new),
-                              label: const Text('Back'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                              ),
-                            )
-                          : const SizedBox(width: 100),
-
-                      // Next button
-                      ElevatedButton.icon(
+                      if (_currentPage > 0)
+                        TextButton.icon(
+                          onPressed: _previousPage,
+                          icon: const Icon(Icons.arrow_back_ios, size: 16),
+                          label: const Text('Back'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 88),
+                      FilledButton(
                         onPressed: _nextPage,
-                        icon: const Icon(Icons.arrow_forward),
-                        label: Text(_currentPage < 2 ? 'Next' : 'Complete'),
-                        style: ElevatedButton.styleFrom(
+                        style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF2E5C88),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
+                          foregroundColor: Theme.of(context).primaryColor,
+                          minimumSize: const Size(120, 48),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(24),
                           ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _currentPage < 2 ? 'Continue' : 'Get Started',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              _currentPage < 2
+                                  ? Icons.arrow_forward_rounded
+                                  : Icons.check_circle_outline_rounded,
+                              size: 20,
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -771,595 +754,712 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              Container(
-                width: 160,
-                height: 160,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.account_balance_wallet,
-                    size: 80,
-                    color: Color(0xFF2E5C88),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              const Text(
-                'Welcome to Money Track',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Track your expenses, manage your finances, and achieve your financial goals with our simple and intuitive app.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // Modern animated illustration with nested containers
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Icon(
-                      Icons.privacy_tip_outlined,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Your privacy is important to us. No profile data or transaction data is collected by the developer or shared with third parties.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
+                    // Outer glow effect
+                    Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            Colors.white.withOpacity(0.3),
+                            Colors.white.withOpacity(0.0),
+                          ],
+                          stops: const [0.5, 1.0],
                         ),
                       ),
                     ),
+                    // Pulsating circle animation
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.8, end: 1.0),
+                      duration: const Duration(seconds: 2),
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: value,
+                          child: Container(
+                            width: 170,
+                            height: 170,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.1),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Main circle with wallet icon
+                    Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.white, Color(0xFFF0F0F0)],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet,
+                        size: 70,
+                        color: Color(0xFF3A7BD5),
+                      ),
+                    ),
+                    // Decorative floating circles
+                    Positioned(
+                      top: 10,
+                      right: 50,
+                      child: _buildFloatingBubble(
+                          30, Colors.white.withOpacity(0.2)),
+                    ),
+                    Positioned(
+                      bottom: 20,
+                      left: 40,
+                      child: _buildFloatingBubble(
+                          25, Colors.white.withOpacity(0.15)),
+                    ),
                   ],
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 36),
+
+                // Modern welcome text with shadow
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Colors.white, Color(0xFFF0F0F0)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ).createShader(bounds),
+                  child: const Text(
+                    'Welcome to\nBudget Tracker',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Description with improved typography
+                Text(
+                  'Track expenses, manage finances, and achieve your financial goals with our simple and intuitive app.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.85),
+                    height: 1.5,
+                    letterSpacing: 0.2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 30),
+
+                // Feature highlights with modern cards
+                _buildFeatureCard(
+                  icon: Icons.attach_money_rounded,
+                  title: 'Track Expenses',
+                  description:
+                      'Record and categorize all your expenses in one place.',
+                ),
+
+                _buildFeatureCard(
+                  icon: Icons.pie_chart_rounded,
+                  title: 'Visualize Spending',
+                  description:
+                      'See where your money goes with intuitive charts.',
+                ),
+
+                _buildFeatureCard(
+                  icon: Icons.shield_rounded,
+                  title: 'Privacy Focused',
+                  description:
+                      'Your data stays on your device. Nothing is shared.',
+                  isLast: true,
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // Helper method for animated floating bubbles
+  Widget _buildFloatingBubble(double size, Color color) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(seconds: 3),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 8.0 * sin(value * pi * 2)),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper method for feature cards
+  Widget _buildFeatureCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    bool isLast = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.7),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildProfilePage() {
-    if (!_showContent) return const SizedBox.shrink();
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Create Profile',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Personalize your experience',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 40),
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8), // Added consistent top spacing
-              const Text(
-                'Create Your Profile',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            // Name input
+            Text(
+              'Name',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _nameError != null
+                      ? Colors.red.withOpacity(0.5)
+                      : Colors.white.withOpacity(0.2),
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Tell us a bit about yourself to personalize your experience',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Profile name input
-              TextField(
+              child: TextField(
                 controller: _nameController,
+                style: const TextStyle(color: Colors.white),
                 onChanged: (_) => setState(() => _nameError = null),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
-                maxLength: 10,
                 decoration: InputDecoration(
-                  labelText: 'Profile Name',
-                  labelStyle: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                  hintText: 'Enter your name or nickname',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                  ),
+                  hintText: 'Enter your name',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  prefixIcon: Icon(Icons.person_outline,
+                      color: Colors.white.withOpacity(0.7)),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16),
                   errorText: _nameError,
-                  errorStyle: const TextStyle(
-                    color: Color(0xFFFF8A80),
-                    fontSize: 14,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.person_outline,
-                    color: Colors.white70,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.1),
-                  counterText: '',
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: Colors.white,
-                      width: 1.5,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: Color(0xFFFF8A80),
-                    ),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: Color(0xFFFF8A80),
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ), // Added consistent padding
+                  counter: const SizedBox.shrink(),
                 ),
+                maxLength: 15,
               ),
-
-              const SizedBox(height: 24),
-
-              // Profile icon selection
-              InkWell(
-                onTap: _showIconSelector,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  height: 80, // Fixed height for consistency
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 5,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _icons[_selectedIcon],
-                          color: const Color(0xFF2E5C88),
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment
-                              .center, // Added for vertical centering
-                          children: [
-                            Text(
-                              'Profile Icon',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Choose an icon for your profile',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        color: Colors.white70,
-                        size: 16,
-                      ),
-                    ],
+            ),
+            if (_nameError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  _nameError!,
+                  style: TextStyle(
+                    color: Colors.red.shade300,
+                    fontSize: 12,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-              // Theme selection
-              InkWell(
-                onTap: _showThemeSelector,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  height: 80, // Fixed height for consistency
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+            // Icon selector
+            Text(
+              'Choose an Icon',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _showIconSelector,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            _icons[_selectedIcon],
+                            color: Theme.of(context).primaryColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Profile Icon',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Choose from our collection',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white.withOpacity(0.5),
+                          size: 16,
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 5,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _selectedThemeMode == ThemeMode.system
-                              ? Icons.brightness_auto
-                              : _selectedThemeMode == ThemeMode.light
-                                  ? Icons.light_mode
-                                  : Icons.dark_mode,
-                          color: const Color(0xFF2E5C88),
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment
-                              .center, // Added for vertical centering
-                          children: [
-                            const Text(
-                              'App Theme',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _selectedThemeMode == ThemeMode.system
-                                  ? 'System Theme'
-                                  : _selectedThemeMode == ThemeMode.light
-                                      ? 'Light Theme'
-                                      : 'Dark Theme',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        color: Colors.white70,
-                        size: 16,
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Theme selector
+            Text(
+              'App Theme',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _showThemeSelector,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            _selectedThemeMode == ThemeMode.system
+                                ? Icons.brightness_auto
+                                : _selectedThemeMode == ThemeMode.light
+                                    ? Icons.light_mode
+                                    : Icons.dark_mode,
+                            color: Theme.of(context).primaryColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Theme Mode',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedThemeMode == ThemeMode.system
+                                    ? 'System Default'
+                                    : _selectedThemeMode == ThemeMode.light
+                                        ? 'Light Mode'
+                                        : 'Dark Mode',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white.withOpacity(0.5),
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildSettingsPage() {
-    if (!_showContent) return const SizedBox.shrink();
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Final Setup',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Set up your budget preferences',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 40),
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Set Your Budget',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            // Currency selector
+            Text(
+              'Currency',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Define your monthly budget and preferred currency',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _showCurrencySelector,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              _selectedCurrencySymbol,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                currencies.firstWhere(
+                                  (c) => c['name']!
+                                      .contains('($_selectedCurrency)'),
+                                  orElse: () => _priorityCurrencies.first,
+                                )['name']!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Tap to change currency',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white.withOpacity(0.5),
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
+            ),
 
-              // Budget setup with dynamic currency symbol
-              TextField(
+            const SizedBox(height: 32),
+
+            // Monthly budget input
+            Text(
+              'Monthly Budget',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _budgetError != null
+                      ? Colors.red.withOpacity(0.5)
+                      : Colors.white.withOpacity(0.2),
+                ),
+              ),
+              child: TextField(
                 controller: _budgetController,
-                onChanged: (_) => setState(() => _budgetError = null),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => setState(() => _budgetError = null),
                 decoration: InputDecoration(
-                  labelText: 'Monthly Budget',
-                  labelStyle: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
                   hintText: 'Enter your monthly budget',
                   hintStyle: TextStyle(
                     color: Colors.white.withOpacity(0.5),
-                  ),
-                  errorText: _budgetError,
-                  errorStyle: const TextStyle(
-                    color: Color(0xFFFF8A80),
-                    fontSize: 14,
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
                   ),
                   prefixIcon: Container(
                     padding: const EdgeInsets.all(16),
                     child: Text(
                       _selectedCurrencySymbol,
                       style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
+                        color: Colors.white,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.1),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: Colors.white,
-                      width: 1.5,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: Color(0xFFFF8A80),
-                    ),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: Color(0xFFFF8A80),
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16),
+                  errorText: _budgetError,
+                  errorStyle: TextStyle(
+                    color: Colors.red.shade300,
+                    fontSize: 12,
                   ),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 40),
 
-              // Currency selection - now after budget
-              InkWell(
-                onTap: _showCurrencySelector,
+            // Ready to start card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 5,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            _selectedCurrencySymbol,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E5C88),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Currency',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              currencies.firstWhere(
-                                (c) =>
-                                    c['name']!.contains('($_selectedCurrency)'),
-                                orElse: () => _priorityCurrencies.first,
-                              )['name']!,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              maxLines: 1,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        color: Colors.white70,
-                        size: 16,
-                      ),
-                    ],
-                  ),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Almost done section
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.celebration,
-                        color: Color(0xFF2E5C88),
-                        size: 28,
-                      ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Almost Done!',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Click Complete to start using Money Track',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: Icon(
+                      Icons.rocket_launch_rounded,
+                      color: Theme.of(context).primaryColor,
+                      size: 28,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Ready to Start',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Click Get Started to begin your journey to better financial management',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.7),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1367,36 +1467,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 }
 
 // Optional: If you don't have a wave pattern image asset, you can use a CustomPainter
-class WavePatternPainter extends CustomPainter {
+class CirclePatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
 
-    final path = Path();
-
-    for (var i = 0; i < size.height; i += 20) {
-      path.moveTo(0, i.toDouble());
-
-      for (var x = 0; x < size.width; x += 40) {
-        path.quadraticBezierTo(
-          x + 10.0,
-          i + 10.0,
-          x + 20.0,
-          i.toDouble(),
-        );
-        path.quadraticBezierTo(
-          x + 30.0,
-          i - 10.0,
-          x + 40.0,
-          i.toDouble(),
+    // Create a pattern of circles across the canvas
+    for (var y = 0; y < size.height; y += 80) {
+      for (var x = 0; x < size.width; x += 80) {
+        // Add some randomness to positions
+        final offsetX = (x + (y % 160 == 0 ? 40 : 0)).toDouble();
+        canvas.drawCircle(
+          Offset(offsetX, y.toDouble()),
+          4 + (((x + y) % 12) / 2), // Vary the size
+          paint,
         );
       }
     }
-
-    canvas.drawPath(path, paint);
   }
 
   @override

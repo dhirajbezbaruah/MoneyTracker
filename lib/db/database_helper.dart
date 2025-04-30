@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/transaction.dart' as app_models;
 import '../models/category.dart' as app_models;
 import 'package:intl/intl.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -13,6 +14,7 @@ class DatabaseHelper {
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB('money_tracker.db');
+    await ensureSchema();
     return _database!;
   }
 
@@ -20,90 +22,210 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
+    Sqflite.setDebugModeOn(true);
+    print('Initializing database at path: $path');
     return await openDatabase(
       path,
-      version: 5, // Increment version for schema change
-      onCreate: _createDB,
-      onUpgrade: _upgradeDB,
+      version: 7, // Increment version to trigger migration
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
-  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // First check if budget_alerts table exists
-    final tables = await db.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='budget_alerts'",
-    );
-    final budgetAlertsExists = tables.isNotEmpty;
-
-    if (oldVersion < 2) {
-      await db.execute('''
-        CREATE TABLE profiles (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          is_selected INTEGER NOT NULL DEFAULT 0,
-          icon_name TEXT,
-          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )
-      ''');
-
-      await db.insert('profiles', {
-        'name': 'Profile 1',
-        'is_selected': 1,
-        'icon_name': 'person',
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      await db
-          .execute('ALTER TABLE transactions ADD COLUMN profile_id INTEGER');
-      await db
-          .execute('ALTER TABLE monthly_budgets ADD COLUMN profile_id INTEGER');
-      await db.execute('UPDATE transactions SET profile_id = 1');
-      await db.execute('UPDATE monthly_budgets SET profile_id = 1');
-    }
-
-    if (oldVersion < 3) {
-      final tableInfo = await db.rawQuery('PRAGMA table_info(profiles)');
-      final hasCreatedAt =
-          tableInfo.any((column) => column['name'] == 'created_at');
-
-      if (!hasCreatedAt) {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    print('Upgrading database from version $oldVersion to $newVersion');
+    if (oldVersion < 6) {
+      try {
         await db.execute(
-            'ALTER TABLE profiles ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP');
-        await db.execute("UPDATE profiles SET created_at = datetime('now')");
+            'ALTER TABLE monthly_budgets ADD COLUMN is_recurring INTEGER DEFAULT 0');
+        print('Added is_recurring column during upgrade');
+      } catch (e) {
+        print('Error adding is_recurring column in _onUpgrade: $e');
       }
     }
 
-    // Create budget_alerts table if it doesn't exist, regardless of version
-    if (!budgetAlertsExists) {
-      await db.execute('''
-        CREATE TABLE budget_alerts (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          category_id INTEGER NOT NULL,
-          threshold REAL NOT NULL,
-          is_percentage INTEGER NOT NULL DEFAULT 0,
-          enabled INTEGER NOT NULL DEFAULT 1,
-          FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
-        )
-      ''');
-    }
-
-    if (oldVersion < 5) {
-      // Drop old budget_alerts table and recreate with nullable category_id
-      await db.execute('DROP TABLE IF EXISTS budget_alerts');
-      await db.execute('''
-        CREATE TABLE budget_alerts (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          category_id INTEGER,
-          threshold REAL NOT NULL,
-          is_percentage INTEGER NOT NULL DEFAULT 0,
-          enabled INTEGER NOT NULL DEFAULT 1,
-          FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
-        )
-      ''');
+    // Add recurring transaction columns if upgrading to version 7
+    if (oldVersion < 7) {
+      try {
+        await db.execute(
+            'ALTER TABLE transactions ADD COLUMN is_recurring INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE transactions ADD COLUMN recurrence_frequency TEXT');
+        await db.execute(
+            'ALTER TABLE transactions ADD COLUMN recurrence_end_date TEXT');
+        print('Added recurring transaction columns during upgrade');
+      } catch (e) {
+        print('Error adding recurring transaction columns in _onUpgrade: $e');
+      }
     }
   }
 
-  Future<void> _createDB(Database db, int version) async {
+  Future<void> ensureSchema() async {
+    final db = await database;
+    print('Checking schema for is_recurring column...');
+    try {
+      await db.rawQuery('SELECT is_recurring FROM monthly_budgets LIMIT 1');
+      print('is_recurring column exists');
+    } catch (e) {
+      print('is_recurring column missing, attempting to add: $e');
+      try {
+        await db.execute(
+            'ALTER TABLE monthly_budgets ADD COLUMN is_recurring INTEGER DEFAULT 0');
+        print('Successfully added is_recurring column');
+      } catch (e) {
+        print('Failed to add is_recurring column in ensureSchema: $e');
+        throw Exception('Cannot add is_recurring column: $e');
+      }
+    }
+
+    // Check for recurring transaction fields in transactions table
+    print('Checking schema for recurring transaction fields...');
+    try {
+      await db.rawQuery(
+          'SELECT is_recurring, recurrence_frequency, recurrence_end_date FROM transactions LIMIT 1');
+      print('Recurring transaction fields exist');
+    } catch (e) {
+      print('Recurring transaction fields missing, attempting to add: $e');
+      try {
+        await db.execute(
+            'ALTER TABLE transactions ADD COLUMN is_recurring INTEGER DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE transactions ADD COLUMN recurrence_frequency TEXT');
+        await db.execute(
+            'ALTER TABLE transactions ADD COLUMN recurrence_end_date TEXT');
+        print('Successfully added recurring transaction fields');
+      } catch (e) {
+        print('Failed to add recurring transaction fields in ensureSchema: $e');
+        throw Exception('Cannot add recurring transaction fields: $e');
+      }
+    }
+  }
+
+  Future<int> getDatabaseVersion() async {
+    final db = await database;
+    final version = await db.getVersion();
+    print('Current database version: $version');
+    return version;
+  }
+
+  Future<void> checkSchema() async {
+    final db = await database;
+    final result = await db.rawQuery('PRAGMA table_info(monthly_budgets)');
+    print('monthly_budgets schema: $result');
+  }
+
+  // Helper method to get budget details by ID
+  Future<Map<String, dynamic>?> getBudgetById(int id) async {
+    final db = await database;
+    final result = await db.query(
+      'monthly_budgets',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  // Helper method to check if a budget exists for a given month and profile
+  Future<Map<String, dynamic>?> getBudgetByMonthAndProfile(
+      String month, int profileId) async {
+    final db = await database;
+    final result = await db.query(
+      'monthly_budgets',
+      where: 'month = ? AND profile_id = ?',
+      whereArgs: [month, profileId],
+      limit: 1,
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  // Modified setBudget to handle recurring budgets
+  Future<void> setBudget(int id, double amount, bool isRecurring) async {
+    final db = await database;
+    await ensureSchema();
+
+    // Get the current budget details
+    final currentBudget = await getBudgetById(id);
+    if (currentBudget == null) {
+      throw Exception('Budget with id $id not found');
+    }
+
+    final currentMonth = currentBudget['month'] as String;
+    final profileId = currentBudget['profile_id'] as int;
+
+    // Update the current budget
+    try {
+      await db.update(
+        'monthly_budgets',
+        {
+          'amount': amount,
+          'is_recurring': isRecurring ? 1 : 0,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      print(
+          'Updated budget: id=$id, month=$currentMonth, amount=$amount, is_recurring=$isRecurring');
+    } catch (e) {
+      print('Error updating budget: $e');
+      rethrow;
+    }
+
+    // If recurring, propagate to future months
+    if (isRecurring) {
+      final dateFormat = DateFormat('yyyy-MM');
+      final currentDate = dateFormat.parse(currentMonth);
+      const maxFutureMonths =
+          12; // Define how many future months to update (e.g., 1 year)
+
+      for (int i = 1; i <= maxFutureMonths; i++) {
+        final futureDate = DateTime(currentDate.year, currentDate.month + i);
+        final futureMonth = dateFormat.format(futureDate);
+
+        // Check if a budget exists for the future month
+        final existingBudget =
+            await getBudgetByMonthAndProfile(futureMonth, profileId);
+
+        if (existingBudget != null) {
+          // Update existing budget
+          try {
+            await db.update(
+              'monthly_budgets',
+              {
+                'amount': amount,
+                'is_recurring': 1,
+              },
+              where: 'month = ? AND profile_id = ?',
+              whereArgs: [futureMonth, profileId],
+            );
+            print(
+                'Updated recurring budget: month=$futureMonth, amount=$amount');
+          } catch (e) {
+            print('Error updating recurring budget for $futureMonth: $e');
+          }
+        } else {
+          // Insert new budget
+          try {
+            await db.insert(
+              'monthly_budgets',
+              {
+                'month': futureMonth,
+                'amount': amount,
+                'profile_id': profileId,
+                'is_recurring': 1,
+              },
+            );
+            print(
+                'Inserted recurring budget: month=$futureMonth, amount=$amount');
+          } catch (e) {
+            print('Error inserting recurring budget for $futureMonth: $e');
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const textType = 'TEXT NOT NULL';
     const integerType = 'INTEGER NOT NULL';
@@ -143,18 +265,22 @@ class DatabaseHelper {
         description TEXT,
         date $textType,
         profile_id $integerType,
+        is_recurring INTEGER DEFAULT 0,
+        recurrence_frequency TEXT,
+        recurrence_end_date TEXT,
         FOREIGN KEY (category_id) REFERENCES categories (id),
         FOREIGN KEY (profile_id) REFERENCES profiles (id)
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE monthly_budgets (
-        id $idType,
-        month $textType,
-        amount $realType,
-        profile_id $integerType,
-        FOREIGN KEY (profile_id) REFERENCES profiles (id)
+      CREATE TABLE monthly_budgets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        month TEXT NOT NULL,
+        amount REAL NOT NULL,
+        profile_id INTEGER NOT NULL,
+        is_recurring INTEGER DEFAULT 0,
+        FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE
       )
     ''');
 
@@ -282,7 +408,6 @@ class DatabaseHelper {
       final transactions =
           maps.map((map) => app_models.Transaction.fromMap(map)).toList();
 
-      // Create CSV content
       final StringBuffer csvContent = StringBuffer();
       csvContent.writeln('Date,Type,Category,Description,Amount');
 
@@ -302,5 +427,13 @@ class DatabaseHelper {
       print('Export error in exportToCSV: $e');
       throw Exception('Failed to generate CSV: $e');
     }
+  }
+
+  Future<void> forceReload() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+    await database;
   }
 }

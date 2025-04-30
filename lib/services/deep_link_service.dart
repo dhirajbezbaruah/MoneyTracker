@@ -33,10 +33,10 @@ class DeepLinkService {
     const String appLink =
         'https://play.google.com/store/apps/details?id=com.fincalculators.moneytrack';
     const String message =
-        'Check out Money Track: Budget & Expense Manager - the perfect app for tracking expenses, managing budgets and monitoring your finances! $appLink';
+        'Check out Budget Tracker: Budget & Expense Manager - the perfect app for tracking expenses, managing budgets and monitoring your finances! $appLink';
 
     await Share.share(message,
-        subject: 'Track Your Finances with Money Track App');
+        subject: 'Track Your Finances with Budget Tracker App');
   }
 
   /// Open app store page (useful for ratings)

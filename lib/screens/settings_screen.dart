@@ -17,7 +17,7 @@ class SettingsScreen extends StatelessWidget {
 
   void _shareApp() {
     Share.share(
-      'Track your expenses with Money Tracker!\n'
+      'Track your expenses with Budget Trackerer!\n'
       'Download now: https://play.google.com/store/apps/details?id=com.fincalculators.moneytrack',
     );
   }
@@ -199,7 +199,7 @@ class SettingsScreen extends StatelessWidget {
                       _buildSettingsCard(
                         context,
                         title: 'Share App',
-                        subtitle: 'Tell your friends about Money Tracker',
+                        subtitle: 'Tell your friends about Budget Trackerer',
                         iconData: Icons.share_outlined,
                         onTap: _shareApp,
                       ),
@@ -233,7 +233,7 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () {
                           showAboutDialog(
                             context: context,
-                            applicationName: 'Money Tracker',
+                            applicationName: 'Budget Trackerer',
                             applicationVersion: VersionUtil.fullVersion,
                             children: [
                               const Text(
